@@ -22,7 +22,9 @@ Parameters are positional, referenced as `$1`, `$2`, ...
 row = await db.query(
     "INSERT INTO orders (customer, total_cents) VALUES ($1, $2) RETURNING id",
     customer, total_cents,
-).one()                                   # dict, or None; raises EncoreError on >1 row
+).one()                                   # exactly one row; raises EncoreError on 0 or >1 rows
+
+order = await db.query("SELECT * FROM orders WHERE id = $1", order_id).first()   # dict or None
 
 rows = await db.query("SELECT id FROM orders WHERE customer = $1", customer).all()
 
@@ -33,15 +35,27 @@ result = await db.exec("UPDATE orders SET status = 'shipped' WHERE id = $1", ord
 result.rows_affected
 ```
 
-- `query` returns a `Cursor` that runs nothing until consumed, and can be consumed **once** (`one()`, `all()`, or `async for`).
+- `query` returns a `Cursor` that runs nothing until consumed, and can be consumed **once** (`one()`, `first()`, `all()`, or `async for`). A second use raises `EncoreError`.
+- **`one()` raises when no row matches.** For a lookup that may miss, use `first()`. (The beta docs say `one()` returns `None`; it doesn't.)
 - Stopping iteration early: `async with db.query(...) as rows:` so it closes.
 - Rows are dicts keyed by column name.
 
 ### Types
 
-Parameters: `None`, `bool`, `int`, `float`, `str`, `bytes`, `bytearray`, `list`, `tuple`, `dict`. **`datetime` and `Decimal` aren't supported yet**: pass strings (`"2026-01-31T12:00:00Z"`).
+Rows use the types asyncpg and psycopg use, and parameters accept the same types:
 
-Results: `numeric` → `str`, `timestamp`/`timestamptz`/`date`/`time` → `str` (RFC 3339), `uuid` → `str`, `bytea` → `bytes`, `json`/`jsonb` → Python JSON values, arrays → `list`.
+| Postgres | Python |
+|---|---|
+| `numeric` | `decimal.Decimal` (keeps the column's scale) |
+| `timestamptz` | aware `datetime` in UTC (a naive `datetime` parameter is taken as UTC) |
+| `timestamp` | naive `datetime` |
+| `date`, `time` | `datetime.date`, `datetime.time` |
+| `bytea` | `bytes` |
+| `json`, `jsonb` | decoded JSON value (a `dict`/`list` parameter is stored as JSON) |
+| arrays | `list` |
+| `uuid`, `inet`, `cidr` | `str` |
+
+The beta docs' type table (numeric and timestamps as strings, no `datetime` parameters) is out of date.
 
 ## Transactions and connections
 
@@ -82,17 +96,17 @@ Another service's database: `orders_db = postgres.Database.named("orders")` at m
 
 `db.connection_string` points at an in-process proxy, valid only in a process running the SDK. Those queries aren't traced.
 
-Django:
+Django (what the `python-django` template does):
 
 ```python
-# storage/resources.py
-db = postgres.Database("django")          # no migrations: Django owns the schema
+# notes/resources.py
+db = postgres.Database("dj")              # no migrations: Django owns the schema
 
 # config/settings.py
 from psycopg.conninfo import conninfo_to_dict
-from storage.resources import db
+from notes.resources import db
 
-c = conninfo_to_dict(db.connection_string)
+c = conninfo_to_dict(db.admin().connection_string)   # admin: Django's migrations run DDL
 DATABASES = {"default": {
     "ENGINE": "django.db.backends.postgresql",
     "NAME": c.pop("dbname"), "USER": c.pop("user", ""), "PASSWORD": c.pop("password", ""),
@@ -100,8 +114,10 @@ DATABASES = {"default": {
 }}
 ```
 
+Encore doesn't run Django's migrations. The template runs `call_command("migrate", interactive=False)` in `main.py` before `encore.run(application)` (the ASGI app). Other management commands go through `encore exec`:
+
 ```bash
-encore exec -- uv run python manage.py migrate
+encore exec -- uv run python manage.py makemigrations
 ```
 
 SQLAlchemy and others: pass the connection string, and manage migrations with their own tools.

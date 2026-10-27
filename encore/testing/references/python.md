@@ -45,7 +45,20 @@ Isolation is **per test process, not per test**. Every test in one pytest run sh
 
 ## Pub/Sub
 
-Nothing calls `encore.run()` or `encore.start()` in tests, so subscriptions don't consume. Call the handler function directly with a `pubsub.Message` you build.
+Nothing calls `encore.run()` or `encore.start()` in tests, so subscriptions don't consume. Call the handler with a `pubsub.Message` you build (a frozen dataclass):
+
+```python
+from datetime import datetime, timezone
+from encore import pubsub
+from resources import OrderPlaced, record
+
+async def test_record():
+    msg = pubsub.Message(
+        data=OrderPlaced(order_id=1, customer="t"), raw_data=b"", attributes={},
+        id="m1", delivery_attempt=1, publish_time=datetime.now(timezone.utc), ordering_key=None,
+    )
+    await record(msg)
+```
 
 ## Django
 

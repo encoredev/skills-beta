@@ -49,7 +49,7 @@ pub async fn send_confirmation(msg: Message<OrderPlaced>) -> Result<(), encore::
 }
 ```
 
-- **Starting:** `#[encore::pubsub::register]` has `encore::initialize()` (or `run_blocking()`) start the subscription. Without it, call `SEND_CONFIRMATION.start()?` yourself; a `static` does nothing until used.
+- **Starting:** `#[encore::pubsub::register]` has `encore::initialize()` (or `run_blocking()`) start the subscription. Without it, call `SEND_CONFIRMATION.start()?` yourself; a `static` does nothing until used. A subscription nothing started logs `subscription "..." has no handler` at startup, and its messages wait.
 - **Handler:** with `register`, pass the `async fn` by name. Without it, the handler must box: `|msg| Box::pin(send_confirmation(msg))`.
 - **Message:** `data`, `raw_data` (`Vec<u8>`), `id` (stable across redeliveries), `attributes` (`HashMap<String, String>`), `delivery_attempt` (from 1), `publish_time` (`SystemTime`), `ordering_key` (`Option<String>`). It is **not** the payload itself.
 - **Decoding:** a payload that fails to deserialize is a failed delivery, retried like a handler error.
@@ -76,7 +76,7 @@ Durations must be `Duration::from_secs(...)` or `Duration::from_millis(...)`: th
 use encore::pubsub::OrderedTopic;
 
 static ACCOUNT_EVENTS: OrderedTopic<AccountEvent> = OrderedTopic::new("account-events");
-ACCOUNT_EVENTS.publish(&event, &account_id).await?; // key: non-empty, required
+ACCOUNT_EVENTS.publish(&event, &account_id).await?; // key required; "" fails with InvalidArgument
 ```
 
 ## Passing a topic to other code

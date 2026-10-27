@@ -40,7 +40,7 @@ tokio::time::sleep(*checkout.payment_timeout).await;
 CHECKOUT.on_change(|value| log::info!(max_items = value.max_items; "checkout changed"));
 ```
 
-Hold one snapshot for a request so its values stay consistent; call `get()` again for the next. `on_change` runs on the runtime's threads: keep it quick.
+Hold one snapshot for a request so its values stay consistent; call `get()` again for the next. Under `encore run`, saving the config file reaches the running service within a second, with no restart; `on_change` gets each new value (not the current one) on the runtime's threads, so keep it quick.
 
 ## Secret fields
 
