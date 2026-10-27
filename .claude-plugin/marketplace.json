@@ -1,0 +1,38 @@
+{
+  "name": "encore-skills-beta",
+  "owner": {
+    "name": "Encore"
+  },
+  "metadata": {
+    "description": "Agent skills for building backend applications with the Encore v2 beta",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "encore-skills-beta",
+      "source": "./encore-skills-beta",
+      "description": "Skills for the Encore v2 beta: TypeScript, Python, Go and Rust",
+      "skills": [
+        "./skills/bucket",
+        "./skills/code-review",
+        "./skills/config",
+        "./skills/create-app",
+        "./skills/cron",
+        "./skills/database",
+        "./skills/deploy",
+        "./skills/getting-started",
+        "./skills/install",
+        "./skills/login",
+        "./skills/mcp",
+        "./skills/migrate-from-v1",
+        "./skills/observability",
+        "./skills/pubsub",
+        "./skills/redis",
+        "./skills/run",
+        "./skills/secrets",
+        "./skills/service",
+        "./skills/testing"
+      ]
+    }
+  ]
+}

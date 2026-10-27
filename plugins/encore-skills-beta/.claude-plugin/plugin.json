@@ -1,0 +1,5 @@
+{
+  "name": "encore-skills-beta",
+  "version": "0.1.0",
+  "description": "Skills for building backend applications with the Encore v2 beta (TypeScript, Python, Go and Rust)"
+}
