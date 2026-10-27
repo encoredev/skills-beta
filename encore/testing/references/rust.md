@@ -74,7 +74,7 @@ async fn lists_users() { /* ... */ }
 
 ## Other services
 
-`services::base_url("orders")` returns a URL, but requests get `501 Not Implemented`. Mock the call, for example by giving a generated client a base URL of a local stub server.
+`services::base_url("orders")` returns a URL, but requests get `501 Not Implemented` (a generated client returns `Error::Status { status: 501, .. }`, its body naming the service and path called). Mock the call, for example by giving the client a base URL of a local stub server.
 
 ## Cron
 

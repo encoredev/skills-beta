@@ -23,11 +23,15 @@ This repository holds agent skills for **Encore v2**, in beta. Skills live in `e
 | TS: `encore db shell <database>` | `encore db shell --database <database>` (all `encore db` commands) |
 | Python: `encore app new --template python` | No `--template` on `app new`; use `encore service new --template ...` |
 | Python: uvicorn + `encore.start()` | Templates use `encore.run(app)`, which also starts subscriptions and handles shutdown |
+| Python: `cursor.one()` returns `None` when no row | Raises `EncoreError`; use `first()` for an optional row |
+| Python: numeric/timestamps come back as `str`, no `datetime` params | `Decimal`, `datetime`, `date`, `time`, both ways |
 | MCP at `127.0.0.1:9400/mcp` | Port varies; read it from `encore status` |
 
 ## Known CLI issues the skills work around (2.0.0-beta.5)
 
 - `encore test` and `encore exec` don't set `ENCORE_RUNTIME_LIB` for TypeScript services (only `encore run` does), so the SDK can't find `encore-runtime.node`. Workaround in `testing` and `run`. Remove it once fixed.
+- Rust: a resource declared inside an inline `mod { use ...; static X = Topic::new(..) }` block whose type is only imported inside that block is silently dropped from discovery. Workaround in the Rust service reference.
+- Python: `encore.run(app)` is the recommended entry point (templates use it) but the beta docs don't mention it.
 - `encore check` passes curl arguments verbatim, so a request without `-f` "succeeds" on a 404 or 502.
 
 ## Skills

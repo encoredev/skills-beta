@@ -31,7 +31,7 @@ Anything else: `"run": {"type": "custom", "cmd": ["uv", "run", "main.py"]}` (wha
 ```python
 # main.py
 import encore
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from resources import db   # import every module that declares resources or subscriptions
 
@@ -39,7 +39,10 @@ app = FastAPI()
 
 @app.get("/orders/{order_id}")
 async def get_order(order_id: int) -> dict:
-    return await db.query("SELECT id, total FROM orders WHERE id = $1", order_id).one() or {}
+    row = await db.query("SELECT id, total FROM orders WHERE id = $1", order_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="order not found")
+    return row
 
 if __name__ == "__main__":
     encore.run(app)

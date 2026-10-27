@@ -25,6 +25,7 @@ encore check < check.txt                             # one request per line, '#'
 - **Pass `-f` (or `-fsS`).** Without it, curl exits 0 on a 404 or 502, and the check "succeeds". Add `-i` to see status and headers.
 - Exit 0: the app started and every command exited 0. Exit 1: read each result between `=== [i/N] ... ===` and `--- exit: N ---` on stdout; build errors and service logs are on stderr.
 - Also check bodies and side effects, not just exit codes.
+- The instance is fresh, but **its data isn't**: it uses the app's local databases, so rows from earlier runs and checks are still there. Don't assert on IDs or counts; create unique data per check.
 
 ## 2. Keep it running
 

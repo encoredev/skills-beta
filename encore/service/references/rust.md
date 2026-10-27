@@ -59,6 +59,10 @@ On `SIGTERM`/`SIGINT`, Encore stops taking Pub/Sub messages, waits for handlers,
 
 `initialize()` is optional (resources initialize on first use), but it is what starts `#[encore::pubsub::register]` subscriptions, so call it.
 
+## Declaring resources
+
+Resources are module-level `static`s with literal names, in any file of the crate. Inside an inline `mod name { ... }` block, write the SDK type's full path (`encore::pubsub::Topic::new(..)`) or import it at the top of the file: the parser ignores `use` statements inside inline modules, and a declaration it can't resolve is **silently skipped** (no error, no resource). Check with `encore debug meta --format json`.
+
 ## Errors
 
 SDK calls return `Result<_, encore::Error>`: `err.code` is an `encore::ErrCode` (`NotFound`, `InvalidArgument`, `AlreadyExists`, `FailedPrecondition`, `Unavailable`, ...) and `err.message` a string. There is no built-in HTTP mapping; translate in your handlers:
@@ -92,7 +96,22 @@ let orders = Client::new(encore::services::base_url("orders"));
 let order = orders.get_order("123").await?; // method per operationId, snake_case
 ```
 
-The client uses `reqwest`, `serde` and `serde_json`; add them. Options: `.with_header(name, value)`, `.with_http_client(reqwest_client)`. Non-2xx returns `Error::Status { status, body }`. gRPC clients use tonic. Don't edit `encore_gen/`.
+```rust
+use encore_gen::clients::orders::Error;
+
+let orders = Client::new(encore::services::base_url("orders"))
+    .with_header("authorization", token)        // sent on every request
+    .with_http_client(reqwest::Client::new());  // replace the default client
+match orders.get_order("123").await {
+    Err(Error::Status { status: 404, .. }) => { /* not found */ }
+    Err(e) => { /* other statuses, Error::Transport, Error::Decode */ }
+    Ok(order) => { /* a struct generated from the spec's schemas */ }
+}
+```
+
+- **Dependencies:** the client uses `reqwest`, `serde` and `serde_json`; add them to `Cargo.toml`.
+- **Generated files:** `src/encore_gen/` carries its own `.gitignore`. Don't edit it.
+- **gRPC:** clients use tonic.
 
 ## Metadata
 
