@@ -84,3 +84,20 @@ appMeta().gateways["api"]?.baseUrl;
 ```
 
 `currentRequest()` describes the Pub/Sub message being handled, or is `undefined`. For HTTP requests, use your framework's request object.
+
+## Deploy builds
+
+The default TS build bundles the service's code with Rolldown and copies the packages it can't bundle into `node_modules`. `"build"` takes three options:
+
+```json
+"build": {
+  "entrypoints": ["src/main.ts"],
+  "external": ["sharp"],
+  "hoist": ["@acme/web"]
+}
+```
+
+- `external`: imported but not bundled; the package is copied in. Use it for packages with native addons, such as `sharp`. `encore build dist` on macOS warns that the copied native binaries are the host's, not the target's.
+- `hoist`: copied into the build's `node_modules` even though no code imports it.
+- **Files next to the code aren't deployed** (a built SPA in `dist/`, templates, fonts). One way in: make the folder a workspace package (give it a `package.json`, add it to the root `workspaces` and dependencies), `hoist` it, and find it at runtime with `dirname(createRequire(import.meta.url).resolve("@acme/web/package.json"))`. Check the result with `encore build dist --services <name>`.
+

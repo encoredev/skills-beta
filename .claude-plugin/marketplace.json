@@ -13,6 +13,7 @@
       "source": "./encore-skills-beta",
       "description": "Skills for the Encore v2 beta: TypeScript, Python, Go and Rust",
       "skills": [
+        "./skills/api",
         "./skills/bucket",
         "./skills/code-review",
         "./skills/config",

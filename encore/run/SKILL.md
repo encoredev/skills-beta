@@ -24,6 +24,7 @@ encore check < check.txt                             # one request per line, '#'
 - Paths are relative to the app's gateway. Everything after the path goes to curl verbatim.
 - **Pass `-f` (or `-fsS`).** Without it, curl exits 0 on a 404 or 502, and the check "succeeds". Add `-i` to see status and headers.
 - Exit 0: the app started and every command exited 0. Exit 1: read each result between `=== [i/N] ... ===` and `--- exit: N ---` on stdout; build errors and service logs are on stderr.
+- The path comes right after `curl` (`curl /users -fsS`, not `curl -fsS /users`), and arguments are split like a shell's: quote JSON bodies in single quotes (`-d '{"name":"ada"}'`), or their double quotes are stripped.
 - Also check bodies and side effects, not just exit codes.
 - The instance is fresh, but **its data isn't**: it uses the app's local databases, so rows from earlier runs and checks are still there. Don't assert on IDs or counts; create unique data per check.
 

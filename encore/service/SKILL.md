@@ -9,7 +9,7 @@ when_to_use: >-
 
 CLI commands are written `encore`; run them as `encore-beta` unless `encore version` reports 2.x (see `encore-beta-install`).
 
-In Encore v2, Encore does not provide the HTTP layer. Each service is an ordinary server in the framework of your choice; Encore starts it, routes to it, provisions what it declares, and deploys it. Keep the app's existing framework, routes and conventions.
+In Encore v2, each service is an ordinary server in the framework of your choice; Encore starts it, routes to it, provisions what it declares, and deploys it. Keep the app's existing framework, routes and conventions. TypeScript and Go services can instead use Encore's own API framework (`"type": "encore-api"`, see `encore-beta-api`), where Encore generates the server from `api()` declarations, as in v1.
 
 After reading this, **read `references/<lang>.md`** for the service's language (`typescript`, `python`, `go`, `rust`: the `lang` field in its manifest). It covers installing the SDK at the right version, startup, shutdown and service calls in that language.
 
@@ -32,6 +32,7 @@ After reading this, **read `references/<lang>.md`** for the service's language (
 |---|---|
 | `name` | Unique in the app. |
 | `lang` | `typescript`, `python`, `go` or `rust`. Selects the default `run`/`test`/`build`. |
+| `type` | `"encore-api"` for a service written with Encore's API framework (`encore-beta-api`); then leave out `run` and `api`. Absent otherwise. |
 | `run` | How `encore run` starts it: `custom` (`cmd`, optional `build`), `script` (a `package.json` script), or the language default (`python`, `go`, `rust`). See the reference. |
 | `test` | How `encore test` runs its tests. Same strategy types. |
 | `build` | How it's built for deploy. TS default bundles with Rolldown (`entrypoints`, `external`, `hoist`). |
@@ -64,7 +65,24 @@ Encore passes the address in `ENCORE_LISTEN_ADDR` as `host:port`. **Bind to it; 
 - `"sensitive": true` keeps headers and bodies out of deployed traces.
 - `expose: true` on `"prefix": "/"` makes every route public once deployed, including cron routes. Add auth with the framework's middleware, or keep internal routes under an unexposed prefix.
 
-Auth, validation, middleware, error responses and CORS for your routes are the framework's job in v2.
+Auth, validation, middleware and error responses for your routes are the framework's job in v2.
+
+## Gateway and CORS
+
+The default gateway, `api`, needs no manifest. **By default it allows any origin, with credentials** (it reflects the request's `Origin`). To restrict it, as v1's `global_cors` did, add a gateway manifest **in a directory of its own**: a gateway owns its directory exclusively, so at the app root it overlaps every service (ENC0020). It's strict JSON: no comments, unlike `encore.app.json`. For example `gateway/encore.gateway.json`:
+
+```json
+{
+  "name": "api",
+  "default": true,
+  "cors": {
+    "allow-origins-with-credentials": ["https://example.com"],
+    "allow-origins-without-credentials": ["https://example.com"]
+  }
+}
+```
+
+Services can't read the gateway's public URL: `appMeta().gateways` is empty inside services in beta.5. If links or sign-in need it, keep it in config with per-environment overlays (`encore-beta-config`).
 
 ## Declaring infrastructure (all languages)
 
