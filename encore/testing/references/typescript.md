@@ -21,6 +21,17 @@ encore test
 
 Or set it in `encore.service.json`: `"test": { "type": "script", "script": "test:integration" }` or `{ "type": "custom", "cmd": [...] }`.
 
+## Vitest: one process per run
+
+Each test **process** gets its own copy of every database it touches, dropped when the process exits. Vitest's default `forks` pool starts a process per test file, so a suite of 40 files and 4 databases creates and drops about 160 databases a run. Every `DROP DATABASE` forces a checkpoint; the test Postgres backs up for minutes and tests time out. Run all files in one process with the `threads` pool, which still isolates each file's modules:
+
+```typescript
+// vitest.config.ts
+export default defineConfig({ test: { pool: "threads" } });
+```
+
+In one real suite this took a run from 4 to 20 minutes with dozens of timeouts to 60 seconds, all passing. `CREATE DATABASE` or `DROP DATABASE` processes that linger after a run (`ps aux | grep DATABASE`) are this backlog.
+
 ## Database tests
 
 ```typescript
@@ -63,6 +74,8 @@ const orders = new Client(serviceUrl("orders").href, {
 });
 ```
 
+**Calling another service's endpoints in-process.** The test process can reach every service's database, so a call helper can invoke the target's endpoint function directly under test instead of over HTTP (check `appMeta().environment.type === "test"`). Register the endpoints lazily, on the first call (`() => import("../orders/orders")`): modules a setup file imports eagerly are loaded before a test file's `vi.mock()` applies, so the mocks silently don't take effect. JSON round-trip the result so tests see what HTTP would deliver (`Date` fields as strings).
+
 ## Pub/Sub
 
 Export the handler function and call it with a message you build:
@@ -70,4 +83,11 @@ Export the handler function and call it with a message you build:
 ```typescript
 export async function handleOrderPlaced(message: Message<OrderPlaced>) { /* ... */ }
 new Subscription(orderPlaced, "send-confirmation", { handler: handleOrderPlaced });
+```
+
+**Publishing is slow under `encore test` in beta.5:** about 250 ms a message, against well under 1 ms for a query. A test that publishes on every call hits Vitest's 5 s timeout. If no test reads what's published, stub it in a setup file:
+
+```typescript
+import { OrderedTopic, Topic } from "@encore.dev/sdk/pubsub";
+for (const t of [Topic, OrderedTopic]) t.prototype.publish = async () => crypto.randomUUID();
 ```

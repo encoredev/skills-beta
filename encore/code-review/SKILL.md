@@ -16,7 +16,7 @@ Run `encore debug meta --format json` (as `encore-beta` unless `encore version` 
 - [ ] Resources aren't aliased (`other = db`), stored-method (`q = db.query`), returned or passed to functions. Helpers get a **handle/reference** (`db.read()`, `bucket.ref<Uploader>()`, `sessions.write()`, `metric.ref()`).
 - [ ] Redis commands are called on their group in one expression (`cache.string.get(...)`).
 - [ ] Resources from another service are bound by name (`Topic.named(...)`), not imported from that service's internals.
-- [ ] Declarations live in modules the service imports at startup (subscriptions especially).
+- [ ] Declarations live in modules the service imports at startup (subscriptions especially). An API framework service's generated entry imports only `index.ts` and modules that declare endpoints.
 - [ ] TS subscription callbacks are properties (`decode: (d) => ...`), not method shorthand.
 - [ ] Python `Secret[str]("X")`/`Config[T]("x")` carry the type argument on the constructor.
 
@@ -34,7 +34,9 @@ Run `encore debug meta --format json` (as `encore-beta` unless `encore version` 
 - [ ] `"expose": true` only where routes are meant to be public, with the framework's auth in front. `prefix: "/"` + `expose` publishes everything, including cron routes.
 - [ ] Untrusted input is validated (Zod, Pydantic, ...); type annotations alone don't validate. Pub/Sub payloads validated with a decoder where it matters.
 - [ ] No secret values in code, config files, logs or committed `.secrets.user.toml`. Secrets needed in deployed environments are shared/global (beta limitation).
-- [ ] Sensitive endpoints marked `"sensitive": true`.
+- [ ] Sensitive endpoints marked `"sensitive": true` (in the API framework, `sensitive: true` on `api()`), including private ones that receive cookies or tokens.
+- [ ] CORS is restricted where it should be: the default gateway reflects any `Origin` with credentials. Restrict it in `encore.gateway.json` (see `encore-beta-service`).
+- [ ] Raw endpoints (API framework `api.raw`) cap their request body themselves: `bodyLimit` isn't applied to them.
 
 ## Correctness
 
@@ -51,5 +53,5 @@ Run `encore debug meta --format json` (as `encore-beta` unless `encore version` 
 
 ## Leftover v1 APIs
 
-- [ ] No `encore.dev/...` imports in TypeScript (v2 is `@encore.dev/sdk/...`), no `api(...)`, `APIError`, `authHandler`, `~encore/clients`, `encore.service.ts`, `SQLDatabase`, `CacheCluster`, `CronJob({ endpoint })`, `.secrets.local.cue`.
+- [ ] No `encore.dev/...` imports in TypeScript (v2 is `@encore.dev/sdk/...`), no `authHandler`, `~encore/clients`, `encore.service.ts`, `SQLDatabase`, `CacheCluster`, `CronJob({ endpoint })`, `.secrets.local.cue`. `api(...)`, `APIError`, `Query<>` and `middleware()` are fine from `@encore.dev/api` in a service with `"type": "encore-api"`, and nowhere else.
 - [ ] No Go `//encore:api` annotations or `encore.dev` imports (v2 is `sdk.encore.dev`).

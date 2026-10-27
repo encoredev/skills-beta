@@ -33,6 +33,12 @@ This repository holds agent skills for **Encore v2**, in beta. Skills live in `e
 - Rust: a resource declared inside an inline `mod { use ...; static X = Topic::new(..) }` block whose type is only imported inside that block is silently dropped from discovery. Workaround in the Rust service reference.
 - Python: `encore.run(app)` is the recommended entry point (templates use it) but the beta docs don't mention it.
 - `encore check` passes curl arguments verbatim, so a request without `-f` "succeeds" on a 404 or 502.
+- `@encore.dev/api`: `APIOptions` lacks `bodyLimit` though the parser reads it (skills show a type augmentation); raw endpoints ignore `bodyLimit`; route parameter name conflicts fail at startup, not at parse time; `{*rest}` doesn't match the bare prefix.
+- No clients are generated between `"type": "encore-api"` services (`dependencies` + `encore gen clients` writes nothing), and there's no browser client generation for them.
+- `appMeta().gateways` is empty inside services, so they can't read the gateway's URL.
+- `encore test` gives each test process its own database copies and drops them on exit; Vitest's default `forks` pool (a process per file) backs up the test Postgres. Skills recommend `pool: "threads"`.
+- Pub/Sub `publish` takes ~250 ms under `encore test`.
+- The default gateway reflects any `Origin` with credentials; `cors` in `encore.gateway.json` (kebab-case keys, strict JSON, in its own directory) restricts it.
 
 ## Skills
 
@@ -42,7 +48,8 @@ This repository holds agent skills for **Encore v2**, in beta. Skills live in `e
 | `encore-beta-install` | install, encore-beta, brew, command not found, version mismatch, failed to spawn |
 | `encore-beta-login` | log in, auth key, ENCORE_AUTH_KEY, whoami, CI |
 | `encore-beta-create-app` | encore app new, app init, service new, template, llm-rules |
-| `encore-beta-service` | encore.service.json, expose, ENCORE_LISTEN_ADDR, serviceUrl, base_url, encore.run, generated clients |
+| `encore-beta-service` | encore.service.json, expose, ENCORE_LISTEN_ADDR, serviceUrl, base_url, encore.run, generated clients, gateway CORS, build config |
+| `encore-beta-api` | Encore's API framework, @encore.dev/api, encore-api, api(), APIError, middleware, keep v1 endpoints |
 | `encore-beta-run` | encore run, encore check, status, stop, logs, traces, 404, 502 |
 | `encore-beta-mcp` | MCP, connect Claude Code/Cursor, mcp clients |
 | `encore-beta-deploy` | deploy, platform link, git push encore, platform deploy, build docker |

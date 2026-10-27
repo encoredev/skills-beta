@@ -1,16 +1,17 @@
 # Encore.ts v1 to v2
 
-Install `@encore.dev/sdk` at the CLI's version and remove `encore.dev`.
+Install `@encore.dev/sdk` at the CLI's version and remove `encore.dev`. With Encore's API framework, also install `@encore.dev/api` at the same version (see `encore-beta-api`).
 
 ## API mapping
 
 | v1 (`encore.dev/...`) | v2 (`@encore.dev/sdk/...`) |
 |---|---|
-| `api()`, `api.raw()`, `api.streamIn()`, ... | Your framework's routes, declared to Encore with an `api` entry |
-| `APIError`, `ErrCode` | Your framework's error handling |
-| `Query<T>`, `Header<T>`, validation types | Framework validation or Zod |
-| `authHandler`, `Gateway`, `getAuthData` | Framework auth middleware |
-| `middleware()` | Framework middleware |
+| `api()`, `api.raw()` | Same, from `@encore.dev/api` (Encore's API framework), or your framework's routes with an `api` entry |
+| `api.streamIn()`, `streamOut()`, `streamInOut()` | Not in the API framework yet: your framework's WebSockets or streaming |
+| `api.static()` | A raw catch-all endpoint that serves the files (see `encore-beta-api`) |
+| `APIError`, `ErrCode`, `Query<T>`, `Header<T>`, validation types | Same, from `@encore.dev/api`; otherwise your framework's errors and Zod |
+| `authHandler`, `Gateway`, `getAuthData` | Middleware on endpoints tagged for auth (see `encore-beta-api`), or your framework's |
+| `middleware()` | Same, from `@encore.dev/api`, or your framework's |
 | `storage/sqldb`: `SQLDatabase` | `storage/postgres`: `Database` |
 | `storage/objects`: `Bucket` | `storage/objects`: `Bucket` (same API) |
 | `pubsub`: `Topic`, `Subscription` | `pubsub`: `Topic`, `OrderedTopic`, `Subscription` |
@@ -107,3 +108,17 @@ const user = (await res.json()) as User;
 ```
 
 For typed calls, give the target an OpenAPI spec (`{ "type": "openapi", "spec": "./openapi.yaml" }`) and list it in the caller's `dependencies` to get a generated client.
+
+## Pitfalls seen porting a real app
+
+- **Resources passed to helpers:** `helper(db)` fails (ENC0034). Pass `db.read()` or `db.write()` and type the parameter as `Queryable` from `@encore.dev/sdk/storage/postgres`.
+- **A shared secret is declared once:** `sharedSecret("X")` in two services fails (ENC0005). Declare it in one shared module and import it. Deployed environments only get app-wide secrets during the beta, so most v1 `secret()` calls become `sharedSecret()`.
+- **Config is read inside a service:** calling a config from shared code fails (ENC0035), even a `globalConfig`. Keep the declaration shared and read it in each service.
+- **Importing another service's topic:** bind it by name instead, `Topic.named<Event>("events")`, and import only its types (`import type`).
+- **`appMeta().apiBaseUrl`** has no replacement: `appMeta().gateways` is empty in services. Put the public URL in config.
+- **Route parameter names:** with the API framework, two routes with differently named parameters in the same position fail at startup (502). v1 allowed it.
+- **`bodyLimit` on raw endpoints** is ignored: enforce it while reading the body.
+- **CORS:** v1's `global_cors` has no automatic equivalent, and the default gateway allows every origin. Add `encore.gateway.json` (see `encore-beta-service`).
+- **Tests that called other services** through `~encore/clients` get 501s: serve those endpoints in-process in tests (see `encore-beta-testing`).
+- **The UI's v1-generated client** (`encore gen client`) keeps working against API framework services, since paths and error JSON are unchanged, but v2 can't regenerate it yet.
+

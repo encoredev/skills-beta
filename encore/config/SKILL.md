@@ -59,4 +59,6 @@ Name a service's config `<service>.<name>`, a shared or global one by name. Path
 
 ## Reading
 
+**Read a config inside a service.** Encore grants a config to the services that read it, so a call from shared code outside any service fails with ENC0035, even for a `globalConfig`. Declare it once in shared code and have each service call it.
+
 Read the value where you use it (it can change while running). Each language also has an on-change callback for things like resizing a pool. Tests use the base file plus the `test` overlay, never user overrides.
