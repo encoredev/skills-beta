@@ -6,7 +6,7 @@ Package: `@encore.dev/api`, with `@encore.dev/sdk` and `@opentelemetry/api` as p
 bun add @encore.dev/api@2.0.0-beta.7 @encore.dev/sdk@2.0.0-beta.7 @opentelemetry/api
 ```
 
-Encore generates the service's entry (`node_modules/.encore/<service>/entry.ts`) and runs it with Bun under `encore run`. The deployed image runs the bundle on Node unless `"build": { "runtime": "bun" }` (2.0.0-beta.6+, see `encore-beta-service`). The entry imports the service's `index.ts` and **only the modules that declare endpoints**. A subscription or cron job declared in a module nothing imports never starts: declare it in an endpoint module or a module one imports.
+Encore generates the service's entry (`node_modules/.encore/<service>/entry.ts`) and runs it with Bun under `encore run`. The deployed image runs the bundle on Node unless `"build": { "runtime": "bun" }` (see `encore-beta-service`). The entry imports the service's `index.ts` and **only the modules that declare endpoints**. A subscription or cron job declared in a module nothing imports never starts: declare it in an endpoint module or a module one imports.
 
 ## Endpoints
 
@@ -33,11 +33,6 @@ export const prune = api({ method: "POST", path: "/users/prune" }, async (): Pro
 ```
 
 - Options must be literals: `method` (one, a list or `"*"`), `path` (`:id` or `{id}`, last segment `{*rest}`), `expose`, `tags`, `sensitive` (kept out of traces), `bodyLimit` (bytes, 2 MiB by default, `null` for none).
-- `APIOptions` has `bodyLimit` from 2.0.0-beta.6. On beta.5 it's missing from the type though Encore reads it; add it once, e.g. `lib/api-options.d.ts`:
-  ```typescript
-  import "@encore.dev/api";
-  declare module "@encore.dev/api" { interface APIOptions { bodyLimit?: number | null } }
-  ```
 - Request fields that aren't path, `Query`, `Header` or `Cookie` come from the JSON body; for GET, HEAD and DELETE they're query parameters. A request that doesn't decode or validate answers 400 `invalid_argument` naming the field. Validation types: `Min`, `Max`, `MinLen`, `MaxLen`, `IsEmail`, `IsURL`, `StartsWith`, `EndsWith`, `MatchesRegexp`.
 - Response fields typed `Header<>`, `Cookie<>` or `HttpStatus` become headers, cookies and the status. A thrown `APIError` answers with its code's status; any other error answers 500 `internal` and is logged.
 
@@ -57,7 +52,7 @@ export const upload = api.raw(
 );
 ```
 
-- **Raw endpoints' bodies are limited as they arrive** (2.0.0-beta.6 and later): past `bodyLimit` (2 MiB by default), Encore answers 400 `invalid_argument` itself, and the handler's read of the body then fails. A handler that answers its own errors should check `resp.headersSent` first. On beta.5 raw endpoints have no limit: count bytes while reading.
+- **Raw endpoints' bodies are limited as they arrive:** past `bodyLimit` (2 MiB by default), Encore answers 400 `invalid_argument` itself, and the handler's read of the body then fails. A handler that answers its own errors should check `resp.headersSent` first.
 - The handler must return `void`/`Promise<void>`: write `resp.end(); return;`, not `return resp.end()`, or it doesn't type-check.
 - `currentRequest()` from `@encore.dev/api` describes the API call (`pathParams`, `headers`, `api.tags`, `middlewareData`). The same name in `@encore.dev/sdk` describes a Pub/Sub message instead.
 

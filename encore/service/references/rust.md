@@ -6,7 +6,7 @@ The Cargo package is `encore-dev`; the crate is `encore`. Pin it to the CLI's ve
 
 ```toml
 [dependencies]
-encore-dev = "=2.0.0-beta.5"   # `encore version` reports the CLI's
+encore-dev = "=2.0.0-beta.7"   # `encore version` reports the CLI's
 log = { version = "0.4", features = ["kv"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 axum = "0.8"

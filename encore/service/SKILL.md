@@ -69,7 +69,7 @@ Auth, validation, middleware and error responses for your routes are the framewo
 
 ## Gateway and CORS
 
-The default gateway, `api`, needs no manifest. From 2.0.0-beta.6 its default policy allows requests **without credentials from any origin, and with credentials from none** (under `encore run` also from `localhost`, `127.0.0.1` and the run's own interface, on any port). v1's `global_cors` in `encore.app.json` has no effect. To allow credentialed requests from your site, add a gateway manifest **in a directory of its own**: a gateway owns its directory exclusively, so at the app root it overlaps every service (ENC0020). It's strict JSON: no comments, unlike `encore.app.json`. The CORS keys are snake_case (from 2.0.0-beta.6; a kebab-case key fails with ENC0025). For example `gateway/encore.gateway.json`:
+The default gateway, `api`, needs no manifest. Its default policy allows requests **without credentials from any origin, and with credentials from none** (under `encore run` also from `localhost`, `127.0.0.1` and the run's own interface, on any port). v1's `global_cors` in `encore.app.json` has no effect. To allow credentialed requests from your site, add a gateway manifest **in a directory of its own**: a gateway owns its directory exclusively, so at the app root it overlaps every service (ENC0020). It's strict JSON: no comments, unlike `encore.app.json`. The CORS keys are snake_case (a kebab-case key fails with ENC0025). For example `gateway/encore.gateway.json`:
 
 ```json
 {
@@ -82,9 +82,9 @@ The default gateway, `api`, needs no manifest. From 2.0.0-beta.6 its default pol
 }
 ```
 
-`allow_origins_with_credentials` refuses `"*"`; every origin is `{"unsafe": "*"}`. A `local` key holds origins for `encore run` only. (On beta.5 the default gateway reflected any `Origin` with credentials, and the keys were kebab-case.)
+`allow_origins_with_credentials` refuses `"*"`; every origin is `{"unsafe": "*"}`. A `local` key holds origins for `encore run` only.
 
-Services read the gateways' URLs from `appMeta().gateways` under `encore run` and when deployed (from 2.0.0-beta.6; empty under `encore test` and `encore exec`, and everywhere on beta.5). On beta.5, keep the public URL in config with per-environment overlays (`encore-beta-config`).
+Services read the gateways' URLs from `appMeta().gateways` (`app_meta()`, `encore.Meta()`) under `encore run` and when deployed; it's empty under `encore test` and `encore exec`. A public domain that differs from the gateway's URL belongs in config (`encore-beta-config`).
 
 ## Declaring infrastructure (all languages)
 

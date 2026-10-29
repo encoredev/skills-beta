@@ -2,12 +2,12 @@
 
 ## Install the SDK
 
-The distribution is `encore-dev`, imported as `encore`. Pin it to the CLI's version (CLI `2.0.0-beta.5` is `encore-dev==2.0.0b5`):
+The distribution is `encore-dev`, imported as `encore`. Pin it to the CLI's version (CLI `2.0.0-beta.7` is `encore-dev==2.0.0b7`):
 
 ```toml
 [project]
 requires-python = ">=3.14"           # what the official templates use; the SDK itself needs >=3.9
-dependencies = ["encore-dev==2.0.0b5", "fastapi>=0.143"]
+dependencies = ["encore-dev==2.0.0b7", "fastapi>=0.143"]
 ```
 
 The package is pure Python. Its native runtime ships with the CLI, and **importing `encore` reads configuration from Encore**, so start code through `encore run`, `encore test` or `encore exec`, never `python main.py` alone.

@@ -35,7 +35,7 @@ let id: i64 = row.try_get("id")?;            // encore::Error instead
 - Types are tokio-postgres's. For `uuid`, `chrono`, `serde_json` and so on, enable the matching feature on the SDK's tokio-postgres fork:
 
 ```toml
-encore-tokio-postgres = { version = "=2.0.0-beta.5", features = ["with-uuid-1", "with-chrono-0_4"] }
+encore-tokio-postgres = { version = "=2.0.0-beta.7", features = ["with-uuid-1", "with-chrono-0_4"] }
 ```
 
 ## Transactions and connections

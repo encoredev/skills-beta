@@ -35,8 +35,8 @@ Run `encore debug meta --format json` (as `encore-beta` unless `encore version` 
 - [ ] Untrusted input is validated (Zod, Pydantic, ...); type annotations alone don't validate. Pub/Sub payloads validated with a decoder where it matters.
 - [ ] No secret values in code, config files, logs or committed `.secrets.user.toml`. Secrets needed in deployed environments are shared/global (beta limitation).
 - [ ] Sensitive endpoints marked `"sensitive": true` (in the API framework, `sensitive: true` on `api()`), including private ones that receive cookies or tokens.
-- [ ] CORS matches what the frontend needs: from 2.0.0-beta.6 the default gateway allows credentialed requests from no other origin, so a frontend on another origin needs `allow_origins_with_credentials` in `encore.gateway.json` (snake_case keys). No `{"unsafe": "*"}` without a reason. On beta.5 the default reflects any `Origin` with credentials: restrict it (see `encore-beta-service`).
-- [ ] Raw endpoints (API framework `api.raw`) set a `bodyLimit` that fits what they take (2 MiB by default, enforced on raw endpoints from 2.0.0-beta.6; on beta.5 they must cap the body themselves).
+- [ ] CORS matches what the frontend needs: the default gateway allows credentialed requests from no other origin, so a frontend on another origin needs `allow_origins_with_credentials` in `encore.gateway.json` (snake_case keys, see `encore-beta-service`). No `{"unsafe": "*"}` without a reason.
+- [ ] Raw endpoints (API framework `api.raw`) set a `bodyLimit` that fits what they take (2 MiB by default).
 
 ## Correctness
 

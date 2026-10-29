@@ -13,7 +13,7 @@ This repository holds agent skills for **Encore v2**, in beta. Skills live in `e
 - When adding or removing a skill, update `.claude-plugin/marketplace.json`, `README.md` and the table below.
 - Style: no em dashes, and don't use the word "shape".
 
-## Known places the beta docs disagree with the CLI (2.0.0-beta.5)
+## Known places the beta docs disagree with the CLI
 
 | Docs say | CLI/SDK actually |
 |---|---|
@@ -27,31 +27,20 @@ This repository holds agent skills for **Encore v2**, in beta. Skills live in `e
 | Python: numeric/timestamps come back as `str`, no `datetime` params | `Decimal`, `datetime`, `date`, `time`, both ways |
 | MCP at `127.0.0.1:9400/mcp` | Port varies; read it from `encore status` |
 
-## Known CLI issues the skills work around
+## Known CLI issues the skills work around (2.0.0-beta.7)
 
-Current release: 2.0.0-beta.7 (Oct 28 2026). When a fix ships, keep the beta.5 note in the skill, labelled with the version that fixed it, since people still run older CLIs.
+The skills describe the latest beta only. When an issue is fixed, delete its workaround from the skills and from this list.
 
-Open in 2.0.0-beta.7:
-
-- **Encore Cloud builds don't install npm packages for TypeScript services**, so TS apps can't deploy (API framework services fail with `no node_modules directory at or above`). Noted in `deploy`; remove once fixed.
+- Encore Cloud builds don't install npm packages for TypeScript services, so TS apps can't deploy (API framework services fail with `no node_modules directory at or above`). Noted in `deploy`.
 - Upgrading the CLI leaves the old daemon running from the removed version's directory, and `encore version` prints the daemon's version. Tests then can't find the bundled Postgres and TS services can't find `encore-runtime.node`. No restart command; workaround in `install` and `run`.
 - The v2 daemon's dev dashboard wants 127.0.0.1:9400, like v1's; with a v1 daemon running it can exit silently. Workaround: `ENCORE_DEVDASH_LISTEN_ADDR`.
-- Encore Cloud stores app-wide secrets only (per-service cloud secrets are on `main`, unreleased).
+- Encore Cloud stores app-wide secrets only.
 - `@encore.dev/api`: `{*rest}` doesn't match the bare prefix; calling an endpoint directly (tests) skips request validation and middleware.
 - No clients are generated between `"type": "encore-api"` services (`dependencies` + `encore gen clients` writes nothing), and there's no browser client generation for them.
+- `encore test` gives each test process its own database copies and drops them on exit; Vitest's default `forks` pool (a process per file) backs up the test Postgres. Skills recommend `pool: "threads"`.
 - Rust: a resource declared inside an inline `mod { use ...; static X = Topic::new(..) }` block whose type is only imported inside that block is silently dropped from discovery. Workaround in the Rust service reference.
 - Python: `encore.run(app)` is the recommended entry point (templates use it) but the beta docs don't mention it.
 - `encore check` passes curl arguments verbatim, so a request without `-f` "succeeds" on a 404 or 502.
-- `encore test` gives each test process its own database copies and drops them on exit; Vitest's default `forks` pool (a process per file) backs up the test Postgres. Skills recommend `pool: "threads"`.
-
-Fixed in 2.0.0-beta.6 (skills keep a beta.5 note):
-
-- `encore test` and `encore exec` set the TS SDK's runtime path (`ENCORE_RUNTIME_LIB` workaround).
-- `@encore.dev/api`: `APIOptions` has `bodyLimit` and raw endpoints enforce it; routes may name parameters in the same position differently.
-- `appMeta().gateways` lists the gateways and their URLs in services (not under `encore test`/`exec`).
-- Pub/Sub publish no longer takes ~250 ms locally.
-- Gateway CORS: keys are snake_case; the default allows credentials from no other origin (beta.5 reflected any `Origin` with credentials); `global_cors` has no effect.
-- Prisma and Drizzle migration layouts are applied (beta.5 found no migrations); `encore db conn-uri --shadow`; `build.inline` and `build.runtime`; native addons stay out of TS bundles by themselves; `encore version upgrade`.
 
 ## Skills
 

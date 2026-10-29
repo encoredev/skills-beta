@@ -46,7 +46,7 @@ encore service new notes --template python-fastapi --ui plain --dir services/not
 
 The name is snake_case and also the directory unless `--dir` says otherwise. It writes the files, pins the SDK to the CLI version, and installs dependencies (`--no-install` prints the commands instead).
 
-Templates in 2.0.0-beta.5 (list them for the current set):
+Templates in 2.0.0-beta.7 (list them for the current set):
 
 | Category | Templates |
 |---|---|

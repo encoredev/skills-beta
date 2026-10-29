@@ -84,7 +84,7 @@ encore/database/
 
 ## Sources and verification
 
-The skills are written against the v2 beta CLI and SDKs (`2.0.0-beta.5`) and the beta docs for TypeScript and Python. Where the beta docs and the CLI disagree, the skills follow the CLI and SDK source. The Go and Rust references are written from the SDK source, since those languages have no beta docs yet.
+The skills are written against the v2 beta CLI and SDKs (`2.0.0-beta.7`) and the beta docs for TypeScript and Python. Where the beta docs and the CLI disagree, the skills follow the CLI and SDK source. The Go and Rust references are written from the SDK source, since those languages have no beta docs yet.
 
 ## License
 

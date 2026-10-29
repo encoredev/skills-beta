@@ -33,7 +33,7 @@ users/migrations/2_add_status.down.sql   # optional; Encore never runs it on its
 - **Never edit an applied migration.** Add a new one with a higher number. A new file numbered below the latest applied one is never run.
 - Keep migrations compatible with the previous release's code, which may still be running during a deploy.
 - A migration runs as one batch. If it fails, the database is marked dirty at that version.
-- ORM-generated migrations: set the migrations source (`drizzle`, `drizzle/v1` or `prisma`, see the reference). Use 2.0.0-beta.6 or later: beta.5 parses the source but ignores its file layout, so it finds no migrations and leaves the database empty without an error. If the ORM owns the schema entirely (Django), declare the database without migrations and run the ORM's migrations through `encore exec`.
+- ORM-generated migrations: set the migrations source (`drizzle`, `drizzle/v1` or `prisma`, see the reference). If the ORM owns the schema entirely (Django), declare the database without migrations and run the ORM's migrations through `encore exec`.
 
 ## CLI
 
@@ -44,7 +44,7 @@ encore db list
 encore db shell --database users                  # psql
 encore db query --database users "SELECT count(*) FROM users"
 encore db conn-uri --database users               # connection string for other tools
-encore db conn-uri --database users --shadow      # 2.0.0-beta.6+: an empty shadow database for Prisma Migrate (`shadowDatabaseUrl`)
+encore db conn-uri --database users --shadow      # an empty shadow database for Prisma Migrate (`shadowDatabaseUrl`)
 encore db proxy                                   # local proxy to every database
 encore db version --database users                # version and dirty flag
 encore db migrate --database users --up           # or --down, --to N, --set N
