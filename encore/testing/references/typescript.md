@@ -12,7 +12,7 @@ encore test --services users                  # one service
 encore test -- vitest run users.test.ts       # a command of your own
 ```
 
-**Known issue (2.0.0-beta.5):** `encore test` and `encore exec` don't tell the TypeScript SDK where its native runtime is, so tests fail with `could not find the Encore runtime library ('encore-runtime.node')`. `encore run` is unaffected. Set the path yourself:
+**Known issue (2.0.0-beta.5, fixed in beta.6):** `encore test` and `encore exec` don't tell the TypeScript SDK where its native runtime is, so tests fail with `could not find the Encore runtime library ('encore-runtime.node')`. `encore run` is unaffected. On beta.5, set the path yourself:
 
 ```bash
 export ENCORE_RUNTIME_LIB="$(brew --prefix encore-beta)/libexec/runtimes/js/encore-runtime.node"
@@ -85,7 +85,7 @@ export async function handleOrderPlaced(message: Message<OrderPlaced>) { /* ... 
 new Subscription(orderPlaced, "send-confirmation", { handler: handleOrderPlaced });
 ```
 
-**Publishing is slow under `encore test` in beta.5:** about 250 ms a message, against well under 1 ms for a query. A test that publishes on every call hits Vitest's 5 s timeout. If no test reads what's published, stub it in a setup file:
+**Publishing is slow under `encore test` and `encore run` in beta.5** (fixed in beta.6): about 250 ms a message, against well under 1 ms for a query. A test that publishes on every call hits Vitest's 5 s timeout. On beta.5, if no test reads what's published, stub it in a setup file:
 
 ```typescript
 import { OrderedTopic, Topic } from "@encore.dev/sdk/pubsub";

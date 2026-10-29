@@ -87,17 +87,21 @@ appMeta().gateways["api"]?.baseUrl;
 
 ## Deploy builds
 
-The default TS build bundles the service's code with Rolldown and copies the packages it can't bundle into `node_modules`. `"build"` takes three options:
+The default TS build bundles the service's code with Rolldown and copies the packages it can't bundle into `node_modules`. From 2.0.0-beta.6 it keeps `@encore.dev/sdk`, `@prisma/client` and packages with native addons (such as `sharp`) out of the bundle by itself. `"build"` takes:
 
 ```json
 "build": {
   "entrypoints": ["src/main.ts"],
-  "external": ["sharp"],
-  "hoist": ["@acme/web"]
+  "external": ["pino"],
+  "inline": ["some-package"],
+  "hoist": ["@acme/web"],
+  "runtime": "bun"
 }
 ```
 
-- `external`: imported but not bundled; the package is copied in. Use it for packages with native addons, such as `sharp`. `encore build dist` on macOS warns that the copied native binaries are the host's, not the target's.
+- `external`: imported but not bundled; the package is copied in. Use it for a package that reads files beside its code or loads modules by computed names (`__dirname is not defined`, `Cannot find module` when bundled). On beta.5, also for native addons such as `sharp`. `encore build dist` on macOS warns that copied native binaries are the host's, not the target's.
+- `inline` (2.0.0-beta.6+): bundle a package that was detected as unbundleable but works bundled. It can't also be `external`.
 - `hoist`: copied into the build's `node_modules` even though no code imports it.
+- `runtime` (2.0.0-beta.6+): `"node"` (default) or `"bun"`, what runs the bundle in the image. `encore run` starts API framework services and Bun templates on Bun, so set `"bun"` to deploy on the runtime you develop on; the build warns when they differ.
 - **Files next to the code aren't deployed** (a built SPA in `dist/`, templates, fonts). One way in: make the folder a workspace package (give it a `package.json`, add it to the root `workspaces` and dependencies), `hoist` it, and find it at runtime with `dirname(createRequire(import.meta.url).resolve("@acme/web/package.json"))`. Check the result with `encore build dist --services <name>`.
 

@@ -29,7 +29,12 @@ Update:
 
 ```bash
 brew upgrade encoredev/tap/encore-beta
+encore-beta version upgrade        # 2.0.0-beta.6+: upgrades in place, to the latest on its channel
 ```
+
+**Restart the daemon after upgrading.** The old daemon keeps running from the removed version's directory, and `encore version` prints the **daemon's** version, so it still reports the old one. Until it restarts, `encore test` fails with `could not determine the Encore installation root, so the bundled Postgres could not be found` (setting `ENCORE_POSTGRES_ROOT` in your shell doesn't help: the daemon provisions databases), and under `encore run` or `encore check` every TS service fails with `could not find the Encore runtime library ('encore-runtime.node')`, so the gateway answers 502. There's no restart command (2.0.0-beta.7). Compare `ls -l "$(command -v encore-beta)"` with the binary of the running `encore-beta daemon` process, and if they differ, stop that process (`pkill -f "encore-beta daemon"`, which stops the apps it runs) and start it again with `encore-beta daemon`.
+
+**v1 and v2 daemons both want port 9400** for the dev dashboard. With a v1 `encore` daemon running, the v2 daemon can retry, then exit without an error (`encore-beta daemon` still prints that it's running; check its log at `~/Library/Caches/encore/daemon.log` on macOS). Start it on another port: `ENCORE_DEVDASH_LISTEN_ADDR=127.0.0.1:9401 encore-beta daemon`.
 
 There's no Windows build documented for the beta; use WSL with Homebrew on Linux.
 

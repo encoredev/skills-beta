@@ -11,7 +11,7 @@ CLI commands are written `encore`; run them as `encore-beta` unless `encore vers
 
 **Run tests through `encore test`.** It attaches the Encore runtime to the test process and provisions infrastructure on first use, isolated from `encore run` data and from other test runs, and removes it when the process exits. Running the test tool directly fails or hits the wrong infrastructure (Python fails at `import encore`).
 
-**Read `references/<lang>.md`** for the service's language (`typescript`, `python`, `go`, `rust`). TypeScript has a known beta.5 issue with `encore test` that its reference explains.
+**Read `references/<lang>.md`** for the service's language (`typescript`, `python`, `go`, `rust`). TypeScript has a beta.5 issue with `encore test`, fixed in beta.6, that its reference explains.
 
 ## Running
 

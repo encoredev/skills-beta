@@ -42,7 +42,7 @@ Set `"type": "encore-api"` at the top of the service's manifest. Leave out `run`
 
 ## Rules the router enforces
 
-- **Parameters in the same position share a name** across the service's routes: `/wines/:id/notes` and `/wines/:from/merge` can't coexist. This isn't caught when the app is parsed: the service fails at startup and the gateway answers 502. Rename one (or move it, e.g. `POST /wines/merge` with both ids in the body).
+- **Parameter names in the same position:** from 2.0.0-beta.6, `/wines/:id/notes` and `/wines/:from/merge` can coexist, and each route keeps its own names. On beta.5 they can't: the app parses, then the service fails at startup and the gateway answers 502. The same route twice under one method is refused in every version.
 - A wildcard is the last segment, `{*rest}`, and doesn't match the bare prefix: `/{*path}` doesn't take `/`, so add a `/` endpoint too.
 - More specific routes win, also across services: one service's `/{*path}` catch-all doesn't shadow another service's `/users/:id`.
 - Endpoints are private unless `expose: true`. Through the gateway a private route answers 405 (or falls through to a public catch-all); the service proxy (`encore run`) still reaches it.
