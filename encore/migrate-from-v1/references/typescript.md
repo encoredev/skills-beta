@@ -21,7 +21,7 @@ Install `@encore.dev/sdk` at the CLI's version and remove `encore.dev`. With Enc
 | (none) | `config`: `config()`, `sharedConfig()`, `globalConfig()` |
 | `metrics`: `Counter`, `CounterGroup`, `Gauge`, `GaugeGroup` | The same plus `UpDownCounter`, `Histogram`, shared/global variants |
 | `log` | `log` |
-| `appMeta()`, `currentRequest()` from `encore.dev` | Same names from `@encore.dev/sdk` |
+| `appMeta()`, `currentRequest()` from `encore.dev` | Same names from `@encore.dev/sdk` (its `currentRequest()` is the Pub/Sub message); an API call's is `currentRequest()` from `@encore.dev/api` |
 | `~encore/clients` | `serviceUrl()` from `services`, or a generated client |
 
 ## Changes per API
@@ -119,7 +119,7 @@ For typed calls, give the target an OpenAPI spec (`{ "type": "openapi", "spec": 
 - **`bodyLimit` on raw endpoints** is enforced as the body arrives, as in v1, but the error differs: v1 code that caught "length limit exceeded" while reading can drop that, since Encore answers the 400 itself.
 - **`auth: false`** fails with ENC0045 ("`auth` is the legacy framework's"): delete it. Replace `auth: true` with a tag such as `tags: ["auth"]` for the auth middleware (see `encore-beta-api`).
 - **Test files are parsed too:** a test that passes a database to a helper (`count(db, ...)`) fails the whole app with ENC0034, like app code. Pass `db.read()`.
-- **CORS:** v1's `global_cors` in `encore.app.json` has no effect in v2. Move it to the `cors` of `gateway/encore.gateway.json` (see `encore-beta-service`); its snake_case keys (`allow_origins_with_credentials`) carry over as they are. Without it, a frontend on another origin can't make credentialed requests.
+- **CORS:** v1's `global_cors` in `encore.app.json` has no effect in v2 (warning ENC0047). Move it to the `cors` of `gateway/encore.gateway.json` (see `encore-beta-service`); its snake_case keys (`allow_origins_with_credentials`) carry over as they are. Without it, a frontend on another origin can't make credentialed requests.
 - **Tests that called other services** through `~encore/clients` get 501s: serve those endpoints in-process in tests (see `encore-beta-testing`). Direct calls skip request validation, so a v1 test expecting `invalid_argument` from a validation type now gets through to the handler.
 - **Many `~encore/clients` call sites:** rather than a hand-written wrapper per call, generate a route table from `encore debug meta --format json`. Each endpoint under `resources.services.<svc>.apiSpecs[].encore.endpoints[]` has `name`, `def.tags`, `def.handler` (`file.ts#name`) and `typedHttp` (path segments, methods, query fields). A small client keyed by endpoint name, typed with `typeof import("../svc/file")`, keeps v1's `svc.endpoint(params)` call sites.
 - **The UI's v1-generated client** (`encore gen client`) keeps working against API framework services, since paths and error JSON are unchanged, but v2 can't regenerate it yet.

@@ -51,7 +51,7 @@ user, err := sessions.Hash.Hgetall(ctx, "user:"+userID).TextMap()
 top, err := sessions.SortedSet.ZrangeWithscores(ctx, "leaderboard", 0, 9).ScoredMembers()
 ```
 
-Other readers: `Bytes`, `Float64`, `Bool`, `Texts`, `Int64s`, `OptionalTexts` (for `Mget`), `Replies`, `Value`. `reply.IsNil()` tests for nil without converting. Scans are iterators: `for key, err := range sessions.Generic.Scan(ctx, redis.ScanOptions{Pattern: "user:*"})`.
+Other readers: `Bytes`, `Float64`, `Bool`, `Texts`, `Int64s`, `OptionalTexts` (for `Mget`), `Replies`, `Value`. `reply.IsNil()` tests for nil without converting. A command the server rejects fails with `*redis.ServerError` (`Code()` is its first word, e.g. `WRONGTYPE`). Scans are iterators: `for key, err := range sessions.Generic.Scan(ctx, redis.ScanOptions{Pattern: "user:*"})`.
 
 ## Pipelines, transactions, watch, scripts
 

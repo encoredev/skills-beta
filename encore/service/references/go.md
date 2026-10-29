@@ -2,7 +2,7 @@
 
 ## Install the SDK
 
-The module is `sdk.encore.dev`. Require it in the service's `go.mod`; the version there doesn't matter:
+The module is `sdk.encore.dev` (and `api.encore.dev` for Encore's API framework). Go 1.27 is required. A `require` in `go.mod` is optional and its version doesn't matter:
 
 ```
 module orders
@@ -12,7 +12,7 @@ go 1.27.0
 require sdk.encore.dev v0.1.0
 ```
 
-`encore run`, `test`, `check` and `build` resolve `sdk.encore.dev` to the SDK that ships with the CLI, through a `go.work` they generate, so the SDK always matches the CLI. The module isn't published: a plain `go build` or `go mod tidy` outside Encore can't fetch it. `encore service new` writes the `go.mod` for you.
+`encore run`, `test`, `check` and `build` resolve both modules to the copies that ship with the CLI, through a `go.work` they generate outside the app (an app's own `go.work` is carried over), so the SDK always matches the CLI. The modules aren't published: a plain `go build` or `go mod tidy` outside Encore can't fetch them. `encore service new` writes the `go.mod` for you.
 
 ## Run strategy
 
@@ -23,7 +23,7 @@ Go has a launch convention, so `run` can be left out. These are equivalent:
 "run": { "type": "go", "package": "." }
 ```
 
-`package` is the main package, relative to the service root (e.g. `"./cmd/server"`). Encore runs `go build` as a build step, then the binary. Anything else:
+`package` is the main package, relative to the service root (e.g. `"./cmd/server"`); `"build": { "type": "go", "package": ... }` sets what release builds compile. Encore runs `go build` as a build step, then the binary. A service with `"type": "encore-api"` and no `main` at its root gets a generated one (see `encore-beta-api`). Anything else:
 
 ```json
 "run": { "type": "custom", "cmd": ["./bin/server"], "build": ["make", "server"] }
@@ -63,7 +63,7 @@ func main() {
 
 - **`encore.Start()` is required for subscriptions.** Unlike TypeScript, declaring one doesn't start it, and Encore logs a warning when an app with subscriptions never calls it. Databases, buckets and Redis open on first use and need no start.
 - On `SIGTERM`/`SIGINT`, Encore stops fetching Pub/Sub messages, waits for in-flight handlers and `OnShutdown` drains (each gets `shutdown.DrainContext()`), closes infrastructure, flushes telemetry and exits 0 (1 after the deadline). A second signal stops the waiting.
-- Other hooks in `sdk.encore.dev/shutdown`: `Started()` and `Cleanup()` channels, `CurrentPhase()` for readiness checks, `Begin(err)` to start a shutdown yourself, `IgnoreSignals()`, `Wait()`, `Finish()`.
+- Other hooks in `sdk.encore.dev/shutdown`: `Started()` and `Cleanup()` channels, `CurrentPhase()` for readiness checks, `Begin(err)` to start a shutdown yourself, `ForceCleanup()` to stop waiting for drains, `IgnoreSignals()`, `Wait()`, `Finish()`.
 
 ## Calling other services
 
@@ -102,9 +102,9 @@ import "sdk.encore.dev/env"
 meta := env.Meta()
 meta.Environment.Type  // env.EnvProduction, EnvDevelopment, EnvEphemeral, EnvTest
 meta.Environment.Cloud // env.CloudAWS, CloudGCP, CloudAzure, EncoreCloud, CloudLocal
-meta.Gateways["api"]   // *env.Gateway with APIBaseURL; empty in a process that serves no gateway
+meta.Gateways["api"]   // *env.Gateway with APIBaseURL (a url.URL)
 ```
 
-Locally, `encore run` reports `EnvDevelopment` with `CloudLocal`; `encore test` reports `EnvTest`.
+`Gateways` is filled under `encore run` and when deployed, and empty under `encore test` and `encore exec`. Locally, `encore run` reports `EnvDevelopment` with `CloudLocal`; `encore test` reports `EnvTest`.
 
 Request Context: typed values the gateway (or a caller) attaches to a request, read with `field.Get(r.Context())`. Declare with `reqctx.NewField[T]("user", reqctx.FieldConfig{})` from `sdk.encore.dev/reqctx`; bind one declared elsewhere with `reqctx.Named[T]("user")`. A server receives them once `tracing.Propagator()` is installed (see the observability skill) or its handler is wrapped with `reqctx.Handler`.

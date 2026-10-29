@@ -11,6 +11,8 @@ bun add @encore.dev/sdk@2.0.0-beta.7 # or npm/pnpm/yarn, matching the service's 
 
 `encore service new` pins it for you. `@opentelemetry/api` is a peer dependency, needed for tracing.
 
+Import the SDK as an ES module. Encore finds resources and what each service uses from `import`s of `@encore.dev/sdk`; through `require()` they get no access and fail at runtime (warning ENC0046). A CommonJS file must become `.mjs` or `"type": "module"`.
+
 ## Run strategy
 
 TypeScript has no single startup convention, so the manifest says how to start the service:
@@ -49,7 +51,21 @@ const i = addr.lastIndexOf(":");
 Bun.serve({ hostname: addr.slice(0, i), port: Number(addr.slice(i + 1)), fetch: app.fetch });
 ```
 
-On `SIGTERM`/`SIGINT`, Encore stops taking Pub/Sub messages, waits for handlers, runs `onShutdown` drains, flushes telemetry and exits (0 within the deadline, 1 after it). Pub/Sub subscriptions start when declared, so there's no start call.
+On `SIGTERM`/`SIGINT`, Encore stops taking Pub/Sub messages, waits for in-flight handlers, `onShutdown` callbacks and holds, closes its resources, flushes telemetry and exits with `process.exitCode` (0 unless set) within the deadline, 1 after it. A second Ctrl-C stops waiting. Pub/Sub subscriptions start when declared, so there's no start call.
+
+```typescript
+import * as shutdown from "@encore.dev/sdk/shutdown";
+
+shutdown.onShutdown(() => app.close()); // gets { signal, deadline }; NestJS: use this, not enableShutdownHooks()
+async function processJob(job: Job) {
+  using _ = shutdown.hold();          // cleanup waits until released
+  await handle(job);
+}
+shutdown.waitUntil(flushQueue());     // a hold for a promise
+shutdown.signal;                      // AbortSignal, aborts when shutdown begins
+```
+
+An app with its own signal listener and no holds is still waited for, until it exits or re-raises the signal. Connections in the app's own `pg`/Drizzle pools stay open until it closes them.
 
 ## Calling other services
 
@@ -83,11 +99,11 @@ appMeta().environment.cloud;       // "aws" | "gcp" | "azure" | "encore" | "loca
 appMeta().gateways["api"]?.baseUrl;
 ```
 
-`currentRequest()` describes the Pub/Sub message being handled, or is `undefined`. For HTTP requests, use your framework's request object.
+`currentRequest()` describes the Pub/Sub message being handled, or is `undefined`. For HTTP requests, use your framework's request object, or on Encore's API framework `currentRequest()` from `@encore.dev/api`.
 
 ## Deploy builds
 
-The default TS build bundles the service's code with Rolldown and copies the packages it can't bundle into `node_modules`. It keeps `@encore.dev/sdk`, `@prisma/client` and packages with native addons (such as `sharp`) out of the bundle by itself. `"build"` takes:
+The default TS build bundles the service's code with Rolldown and copies the packages it can't bundle into `node_modules`. It keeps `@encore.dev/sdk`, `@encore.dev/api`, `@prisma/client` and packages with native addons (such as `sharp`) out of the bundle by itself. `"build"` takes:
 
 ```json
 "build": {
@@ -100,7 +116,7 @@ The default TS build bundles the service's code with Rolldown and copies the pac
 ```
 
 - `external`: imported but not bundled; the package is copied in. Use it for a package that reads files beside its code or loads modules by computed names (`__dirname is not defined`, `Cannot find module` when bundled). `encore build dist` on macOS warns that copied native binaries are the host's, not the target's.
-- `inline`: bundle a package that was detected as unbundleable but works bundled. It can't also be `external`.
+- `inline`: bundle a package that was detected as unbundleable but works bundled. It can't also be `external`, and `@encore.dev/sdk`, `@encore.dev/api` and `bun` are always external.
 - `hoist`: copied into the build's `node_modules` even though no code imports it.
 - `runtime`: `"node"` (default) or `"bun"`, what runs the bundle in the image. `encore run` starts API framework services and Bun templates on Bun, so set `"bun"` to deploy on the runtime you develop on; the build warns when they differ.
 - **Files next to the code aren't deployed** (a built SPA in `dist/`, templates, fonts). One way in: make the folder a workspace package (give it a `package.json`, add it to the root `workspaces` and dependencies), `hoist` it, and find it at runtime with `dirname(createRequire(import.meta.url).resolve("@acme/web/package.json"))`. Check the result with `encore build dist --services <name>`.

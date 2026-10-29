@@ -2,7 +2,7 @@
 name: encore-beta-service
 description: Add or configure a service in an Encore v2 (beta) app with `encore.service.json`, in TypeScript, Python, Go or Rust. Covers the run, build and test strategies, the `api` entries and `expose`, listening on `ENCORE_LISTEN_ADDR`, startup and graceful shutdown, calling other services, and generated clients.
 when_to_use: >-
-  User is working in an Encore v2 app (has `encore.app.json`, `encore.service.json`, `@encore.dev/sdk`, `encore-dev`, `sdk.encore.dev` or the `encore` Rust crate) and wants to add a service, wire an existing Express/Hono/Fastify/Next.js/FastAPI/Django/Flask/net/http/Axum server into Encore, make routes public, call another service, or fix a service that won't start or isn't reachable through the gateway. Trigger phrases: "add a service", "encore.service.json", "expose", "ENCORE_LISTEN_ADDR", "serviceUrl", "base_url", "call another service", "gateway returns 404", "generated client", "dependencies", "encore.run". SKIP for v1 apps (`encore.app` + `encore.service.ts`/`//encore:api`): use the stable Encore skills.
+  User is working in an Encore v2 app (has `encore.app.json`, `encore.service.json`, `@encore.dev/sdk`, `encore-dev`, `sdk.encore.dev` or the `encore` Rust crate) and wants to add a service, wire an existing Express/Hono/Fastify/Next.js/FastAPI/Django/Flask/net/http/Axum server into Encore, make routes public, call another service, or fix a service that won't start or isn't reachable through the gateway. Trigger phrases: "add a service", "encore.service.json", "expose", "ENCORE_LISTEN_ADDR", "serviceUrl", "base_url", "call another service", "gateway returns 404", "generated client", "dependencies", "encore.run". SKIP for v1 apps (`encore.app` + `encore.service.ts`, or Go `//encore:api` packages with no `encore.service.json`): use the stable Encore skills.
 ---
 
 # Encore v2 services
@@ -65,11 +65,11 @@ Encore passes the address in `ENCORE_LISTEN_ADDR` as `host:port`. **Bind to it; 
 - `"sensitive": true` keeps headers and bodies out of deployed traces.
 - `expose: true` on `"prefix": "/"` makes every route public once deployed, including cron routes. Add auth with the framework's middleware, or keep internal routes under an unexposed prefix.
 
-Auth, validation, middleware and error responses for your routes are the framework's job in v2.
+Auth, validation, middleware and error responses for your routes are the framework's job in v2. Go and Python apps can also authenticate at the gateway: a service with a `gateway` section serves gateway Middleware that sets Request Context fields for the services behind it (see the reference).
 
 ## Gateway and CORS
 
-The default gateway, `api`, needs no manifest. Its default policy allows requests **without credentials from any origin, and with credentials from none** (under `encore run` also from `localhost`, `127.0.0.1` and the run's own interface, on any port). v1's `global_cors` in `encore.app.json` has no effect. To allow credentialed requests from your site, add a gateway manifest **in a directory of its own**: a gateway owns its directory exclusively, so at the app root it overlaps every service (ENC0020). It's strict JSON: no comments, unlike `encore.app.json`. The CORS keys are snake_case (a kebab-case key fails with ENC0025). For example `gateway/encore.gateway.json`:
+The default gateway, `api`, needs no manifest. Its default policy allows requests **without credentials from any origin, and with credentials from none** (under `encore run` also from `localhost`, `127.0.0.1` and the run's own interface, on any port). v1's `global_cors` in `encore.app.json` has no effect (the parser warns, ENC0047). To allow credentialed requests from your site, add a gateway manifest **in a directory of its own**: a gateway owns its directory exclusively, so at the app root it overlaps every service (ENC0020). It's strict JSON: no comments, unlike `encore.app.json`. The CORS keys are snake_case (a kebab-case key fails with ENC0025). For example `gateway/encore.gateway.json`:
 
 ```json
 {
@@ -84,7 +84,7 @@ The default gateway, `api`, needs no manifest. Its default policy allows request
 
 `allow_origins_with_credentials` refuses `"*"`; every origin is `{"unsafe": "*"}`. A `local` key holds origins for `encore run` only.
 
-Services read the gateways' URLs from `appMeta().gateways` (`app_meta()`, `encore.Meta()`) under `encore run` and when deployed; it's empty under `encore test` and `encore exec`. A public domain that differs from the gateway's URL belongs in config (`encore-beta-config`).
+Services read the gateways' URLs from `appMeta().gateways` (`app_meta()`, Go `env.Meta()`) under `encore run` and when deployed; it's empty under `encore test` and `encore exec`. A public domain that differs from the gateway's URL belongs in config (`encore-beta-config`).
 
 ## Declaring infrastructure (all languages)
 
@@ -97,7 +97,7 @@ Encore finds resources by parsing source, so:
 
 ## Calling other services
 
-Plain HTTP (or gRPC) to the other service's base URL, which Encore resolves per environment and which reaches unexposed endpoints too: `serviceUrl("orders")` in TypeScript, `base_url("orders")` in Python, and the equivalents in Go and Rust (see the reference). Propagate the W3C `traceparent` header to join traces; HTTP client instrumentation does this.
+Plain HTTP (or gRPC) to the other service's base URL, which Encore resolves per environment and which reaches unexposed endpoints too: `serviceUrl("orders")` in TypeScript, `base_url("orders")` in Python, and the equivalents in Go and Rust (see the reference). Propagate the W3C `traceparent` header to join traces; HTTP client instrumentation does this. Python's `encore.services.<client>.client()` and Go's `services.Transport` also forward Request Context.
 
 If the target declares an `openapi`, `graphql` or `grpc` API, list it in the caller's `"dependencies"`. `encore run` keeps a typed client in the caller's `encore_gen/clients/` directory (`encore gen clients` regenerates). Don't edit `encore_gen/` or `.encore/`.
 

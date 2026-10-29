@@ -21,6 +21,8 @@ Bind a topic declared elsewhere (another service or language). Give the type, it
 const orderPlaced = Topic.named<OrderPlaced>("order-placed");
 ```
 
+An ordered topic binds with `OrderedTopic.named<T>("name")`.
+
 ## Publish
 
 ```typescript
@@ -62,7 +64,7 @@ new Subscription(orderPlaced, "send-confirmation", {
 
 Write callbacks as properties (`decode: (data) => ...`). The parser rejects method shorthand (`decode(data) { ... }`).
 
-Bytes: `encoding: "raw"` makes `data` the raw `Buffer`.
+Bytes: `encoding: "raw"` makes `data` the raw `Buffer`; a `Topic<Buffer>` subscription must set it. With `encoding: "raw"`, `decode` parses a custom format from the bytes.
 
 ### Options (literals only)
 
@@ -72,7 +74,7 @@ new Subscription(orderPlaced, "send-confirmation", {
   retryPolicy: { minBackoff: "10s", maxBackoff: "10m", maxRetries: 20 }, // defaults 10s / 10m / 100
   ackDeadline: "60s",       // default 30s, min 1s
   messageRetention: "7d",   // default 7 days
-  maxConcurrency: 20,       // per instance; negative = unlimited
+  maxConcurrency: 20,       // per instance; negative = unlimited; no effect on Encore Cloud
 });
 ```
 
@@ -98,4 +100,4 @@ await notify(orderPlaced.ref<Publisher<OrderPlaced>>(), event);
 
 For an ordered topic the permission is `OrderedPublisher<T>`.
 
-Inside a handler, `currentRequest()` from `@encore.dev/sdk` returns `{ type: "pubsub-message", topic, subscription, messageId, deliveryAttempt, trace }`.
+Inside a handler, `currentRequest()` from `@encore.dev/sdk` returns `{ type: "pubsub-message", service, topic, subscription, messageId, deliveryAttempt, trace }`.

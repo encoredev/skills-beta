@@ -24,7 +24,7 @@ A subscription that "never receives anything" is almost always a missing start c
 
 ## Rules for every language
 
-- Declare topics and subscriptions at module/package scope with literal names and options. Option values computed at runtime are not seen; the default is used.
+- Declare topics and subscriptions at module/package scope with literal names and options. Option values computed at runtime are not seen; the default is used (Rust: a parse error). Topic names are kebab-case and may contain periods (`order.placed`); subscription names are kebab-case.
 - **Handlers receive a message wrapper, not the payload.** Read `.data` (also `id`, `attributes`, delivery attempt, publish time, ordering key). This is the most common v1-to-v2 mistake.
 - Delivery is at-least-once by default. **Make handlers idempotent**, e.g. record processed message IDs. `exactly-once` reduces redelivery but doesn't deduplicate double publishes, and caps throughput (300 msg/s per topic on AWS).
 - Type annotations don't validate incoming JSON. Validate with a decoder (TS `decode`, Python Pydantic model as the type argument).

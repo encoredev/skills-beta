@@ -68,7 +68,7 @@ static SEND_CONFIRMATION: Subscription<OrderPlaced> =
         .max_concurrency(20);                              // default unlimited
 ```
 
-Durations must be `Duration::from_secs(...)` or `Duration::from_millis(...)`: the parser reads them from the source.
+Durations must be `Duration::from_secs(...)` or `Duration::from_millis(...)`, and every number an integer literal or a product of them (`7 * 86400`): the parser reads them from the source. Anything else (a `const`, a variable) is a parse error, not a silent default.
 
 ## Ordered topics
 

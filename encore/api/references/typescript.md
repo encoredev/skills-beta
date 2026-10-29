@@ -32,9 +32,9 @@ export const get = api(
 export const prune = api({ method: "POST", path: "/users/prune" }, async (): Promise<void> => { /* ... */ });
 ```
 
-- Options must be literals: `method` (one, a list or `"*"`), `path` (`:id` or `{id}`, last segment `{*rest}`), `expose`, `tags`, `sensitive` (kept out of traces), `bodyLimit` (bytes, 2 MiB by default, `null` for none).
-- Request fields that aren't path, `Query`, `Header` or `Cookie` come from the JSON body; for GET, HEAD and DELETE they're query parameters. A request that doesn't decode or validate answers 400 `invalid_argument` naming the field. Validation types: `Min`, `Max`, `MinLen`, `MaxLen`, `IsEmail`, `IsURL`, `StartsWith`, `EndsWith`, `MatchesRegexp`.
-- Response fields typed `Header<>`, `Cookie<>` or `HttpStatus` become headers, cookies and the status. A thrown `APIError` answers with its code's status; any other error answers 500 `internal` and is logged.
+- Options must be literals: `method` (one, a list or `"*"`; by default POST with a request, GET and POST without, every method for a raw endpoint), `path` (`:id` or `{id}`, last segment `{*rest}` or `*rest`; by default `/<service>.<endpoint>`), `expose` (default false), `tags`, `sensitive` (kept out of traces), `bodyLimit` (bytes, 2 MiB by default, `null` for none). A method the route doesn't take answers 404; HEAD falls back to GET.
+- Request fields that aren't path, `Query`, `Header` or `Cookie` come from the JSON body; for GET, HEAD and DELETE they're query parameters. A request that doesn't decode or validate answers 400 `invalid_argument` naming the field; body members the request type doesn't declare are dropped, not refused. `Date` fields arrive as `Date`s. Validation types: `Min`, `Max`, `MinLen`, `MaxLen`, `IsEmail`, `IsURL`, `StartsWith`, `EndsWith`, `MatchesRegexp`.
+- Response fields typed `Header<>`, `Cookie<>` or `HttpStatus` become headers, cookies and the status. A handler returning nothing answers 200 with no body. A thrown `APIError` answers with its code's status and `{ code, message, details }` (`.withDetails({...})`); any other error answers 500 `internal`, logged and not sent.
 
 ## Raw endpoints
 

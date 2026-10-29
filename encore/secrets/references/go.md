@@ -15,7 +15,7 @@ dsn := sentryDSN.StringValue() // the stored string, "" if unset
 
 - The type argument decodes the value: `string` and `[]byte` as stored, anything else from JSON (`secrets.New[Credentials]("DBCreds")`).
 - Values can change while the app runs. Read where you use it instead of caching for the process lifetime.
-- Locally, an unset secret makes `Value()` return an error and `StringValue()` return `""`. Unlike TypeScript there's no silent empty value from `Value()`.
+- An unset secret makes `Value()` return an error, locally and deployed, and `StringValue()` return `""`. Unlike TypeScript there's no silent empty value from `Value()`. The error never contains the value.
 - `stripeKey.String()` returns `Secret(StripeKey: *********)`, never the value.
 
 A secret can only be used by calling its methods. Passing it to a function (even one taking `*secrets.Secret[string]`), assigning it, or handing it to `fmt.Sprint` is a parse error, and there's no reference type. Read the value and pass that.

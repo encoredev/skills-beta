@@ -9,7 +9,7 @@ when_to_use: >-
 
 CLI commands are written `encore`; run them as `encore-beta` unless `encore version` reports 2.x (see `encore-beta-install`).
 
-v2 telemetry is OpenTelemetry. Without any setup, Encore traces what passes through it: gateway requests, calls between services, and every SDK operation (queries, publishes, message handling, bucket and Redis calls). **Your framework's routing, outgoing HTTP calls, other database clients and your own spans appear only after you register Encore's providers** (Python's `encore.run(app)` does it for you). Encore never installs OpenTelemetry globals on its own, so it won't fight an existing setup.
+v2 telemetry is OpenTelemetry. Without any setup, Encore traces what passes through it: gateway requests, calls between services, and every SDK operation (queries, publishes, message handling, bucket and Redis calls). **Your framework's routing, outgoing HTTP calls, other database clients and your own spans appear only after you register Encore's providers** (for request spans, Python's `encore.run(app)` or Encore's ASGI/WSGI middleware does it for you). Encore never installs OpenTelemetry globals on its own, so it won't fight an existing setup.
 
 **Read `references/<lang>.md`** for the service's language (`typescript`, `python`, `go`, `rust`).
 

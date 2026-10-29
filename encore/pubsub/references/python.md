@@ -94,4 +94,6 @@ await cart_events.publish({"event": "checkout_started"}, ordering_key=str(cart_i
 
 Call `publish` on the module-level variable (directly or through an import). Don't pass the topic object around.
 
-Inside a handler, the message's processing span isn't the current OpenTelemetry span yet, so spans you create there aren't linked to the message's trace.
+## Tracing and Request Context
+
+A handler runs in its message's delivery span: spans it starts, and calls it makes through `encore.services` clients, join the message's trace. Request Context fields declared with `pubsub=True` and set when publishing are readable in the handler (`field.get()`).

@@ -27,6 +27,16 @@ mux.HandleFunc("POST /internal/cleanup", func(w http.ResponseWriter, r *http.Req
 })
 ```
 
+With Encore's API framework (`"type": "encore-api"`), serve it with a private endpoint:
+
+```go
+//encore:api method=POST path=/internal/cleanup
+func (s *Service) Cleanup(ctx context.Context) error {
+	_, err := db.Exec(ctx, "DELETE FROM sessions WHERE expires_at < now()")
+	return err
+}
+```
+
 Don't build the route from the job (`"POST " + job.Path`): the parser rejects reading a job's fields, despite the SDK's doc example.
 
 v1 took `Endpoint: SomeAPI`; v2 takes `Path`.

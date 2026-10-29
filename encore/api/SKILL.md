@@ -1,8 +1,8 @@
 ---
 name: encore-beta-api
-description: Write endpoints with Encore's own API framework in an Encore v2 (beta) app, for TypeScript (`@encore.dev/api`). Covers `"type": "encore-api"`, `api()` and `api.raw()`, path, query, header and cookie parameters, validation, `APIError`, middleware and auth by tags, calling other services, and testing endpoints.
+description: Write endpoints with Encore's own API framework in an Encore v2 (beta) app, for TypeScript (`@encore.dev/api`) and Go (`api.encore.dev`, `//encore:api` methods). Covers `"type": "encore-api"`, `api()` and `api.raw()`, path, query, header and cookie parameters, validation, `APIError`, middleware and auth by tags, calling other services, and testing endpoints.
 when_to_use: >-
-  User is in an Encore v2 app and wants Encore-style typed endpoints instead of a third-party framework, is porting a v1 Encore.ts app and wants to keep its `api()` endpoints, sees `"type": "encore-api"` or `@encore.dev/api`, or needs auth, middleware or validation for such endpoints. Trigger phrases: "api()", "@encore.dev/api", "encore-api", "Encore API framework", "typed endpoint", "APIError", "Query<>", "Header<>", "middleware", "keep my v1 endpoints". SKIP for services written with Express, Hono, Fastify, FastAPI or another framework (`encore-beta-service`), and for v1 apps (`encore.dev/api`): use the stable `encore-api` skill.
+  User is in an Encore v2 app and wants Encore-style typed endpoints instead of a third-party framework, is porting a v1 Encore.ts app and wants to keep its `api()` endpoints, sees `"type": "encore-api"` or `@encore.dev/api`, or needs auth, middleware or validation for such endpoints. Trigger phrases: "api()", "@encore.dev/api", "encore-api", "Encore API framework", "typed endpoint", "APIError", "Query<>", "Header<>", "middleware", "keep my v1 endpoints", "//encore:api", "api.encore.dev", "api.Handle", "keep my Encore.go endpoints". SKIP for services written with Express, Hono, Fastify, FastAPI or another framework (`encore-beta-service`), and for v1 apps (`encore.dev/api`): use the stable `encore-api` skill.
 ---
 
 # Encore's API framework in v2
@@ -13,11 +13,11 @@ In v2 a service can bring its own HTTP framework, or use Encore's. With Encore's
 
 It's the shortest path for a v1 Encore.ts app: endpoint code moves over almost unchanged, and the error JSON (`{"code", "message", "details"}`) is the same, so existing clients keep working.
 
-**Read `references/<lang>.md`** for the service's language. The framework exists for TypeScript (`typescript`) and Go; only TypeScript is covered here so far. Python and Rust services use their own framework (`encore-beta-service`).
+**Read `references/<lang>.md`** for the service's language. The framework exists for TypeScript (`typescript`) and Go (`go`). Python and Rust services use their own framework (`encore-beta-service`).
 
 ## Turning it on
 
-Set `"type": "encore-api"` at the top of the service's manifest. Leave out `run` and `api`: Encore starts the service and learns its routes from the code.
+Set `"type": "encore-api"` at the top of the service's manifest. Leave out `run` and `api`: Encore starts the service and learns its routes from the code. In Go, `main` is generated when the service root isn't a `main` package; write your own to add middleware.
 
 ```json
 {
@@ -39,6 +39,8 @@ Set `"type": "encore-api"` at the top of the service's manifest. Leave out `run`
 | `~encore/clients` | None yet: no clients are generated between these services. Call `serviceUrl()` with `fetch` |
 | `api.static` | None. Serve files from a raw catch-all endpoint |
 | `api.streamIn` / `streamOut` / `streamInOut` | None yet |
+
+The table is TypeScript's. In Go, `//encore:api` stays, on exported methods with path parameters in the request struct; `sdk.encore.dev/beta/errs` is `api.encore.dev/errs`; there's no auth handler (`srv.Use` middleware). See the Go reference.
 
 ## Rules the router enforces
 

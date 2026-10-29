@@ -20,7 +20,10 @@ encore test                                # each service's `test` strategy (def
 encore test --services users               # service-set expression: 'users | billing', 'lang(ts)'
 encore test --concurrency 1
 encore test -- vitest run users.test.ts    # your own command
+encore test --report-dir out --coverage    # JUnit per service and a merged coverage.lcov (not with your own command)
 ```
+
+Your own command (`encore test -- <cmd>`) runs once, verbatim, from the current directory; with `--services` it runs in each selected service's directory with its environment.
 
 Defaults: TypeScript runs the `test` script in `package.json`; Python runs `pytest` through the lockfile's package manager; Go and Rust use their language test strategy. Override with `"test": { "type": "custom", "cmd": [...] }` (or `"script"` for TypeScript) in `encore.service.json`.
 

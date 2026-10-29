@@ -90,6 +90,8 @@ var client = &http.Client{Transport: services.Transport(otelhttp.NewTransport(ht
 
 Add the instrumentation for your stack (chi, gin, echo, pgx, go-redis, ...). Database, Redis, bucket and Pub/Sub calls made through the SDK are traced already, as children of the span in the `ctx` you pass.
 
+Encore's API framework (`api.encore.dev`) records a server span per request, named after its route (`GET /users/{id}`), and continues the incoming trace without any global setup: don't wrap `api.Server` in `otelhttp`, which records a second span. Install the providers anyway for spans and client calls of your own.
+
 Own spans:
 
 ```go

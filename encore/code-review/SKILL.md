@@ -26,8 +26,9 @@ Run `encore debug meta --format json` (as `encore-beta` unless `encore version` 
 - [ ] The server binds to `ENCORE_LISTEN_ADDR`, with no hardcoded port.
 - [ ] Routes include the service's `prefix`.
 - [ ] SDK version pinned to the CLI version.
+- [ ] TS imports `@encore.dev/sdk` with `import`, never `require()` (ENC0046: the resources it declares or uses aren't found or granted).
 - [ ] Subscriptions are started: Python `encore.run(app)` or `await encore.start()`, Go `encore.Start()`, Rust `#[encore::pubsub::register]` + `encore::initialize()`.
-- [ ] Graceful shutdown kept: TS `onShutdown` drains the server; Python servers other than `encore.run` call `shutdown.begin()`/`completed()`; no forking after `import encore`.
+- [ ] Graceful shutdown kept: TS `onShutdown` drains the server (NestJS: `onShutdown(() => app.close())`, not `enableShutdownHooks()`), and long work holds shutdown back with `hold()` from `@encore.dev/sdk/shutdown`; Python servers other than `encore.run` add `encore.server.asgi.Middleware` (or `wsgi.Middleware`) and await `encore.start()`, and call `encore.shutdown` only to drain background work first; no forking after `import encore`.
 
 ## Exposure and security
 
@@ -54,4 +55,4 @@ Run `encore debug meta --format json` (as `encore-beta` unless `encore version` 
 ## Leftover v1 APIs
 
 - [ ] No `encore.dev/...` imports in TypeScript (v2 is `@encore.dev/sdk/...`), no `authHandler`, `~encore/clients`, `encore.service.ts`, `SQLDatabase`, `CacheCluster`, `CronJob({ endpoint })`, `.secrets.local.cue`. `api(...)`, `APIError`, `Query<>` and `middleware()` are fine from `@encore.dev/api` in a service with `"type": "encore-api"`, and nowhere else.
-- [ ] No Go `//encore:api` annotations or `encore.dev` imports (v2 is `sdk.encore.dev`).
+- [ ] Go `//encore:api` only on exported methods in `"type": "encore-api"` services; no `//encore:service`, `//encore:authhandler`, `//encore:middleware`, `public`/`auth` options, `encore.dev` imports or `sdk.encore.dev/beta/errs` (errors are `api.encore.dev/errs`).

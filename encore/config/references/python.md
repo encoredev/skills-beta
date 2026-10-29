@@ -25,6 +25,16 @@ Supported types: a dataclass, `TypedDict` or `Enum`, built from `str`, `int`, `f
 
 Constraints, via `Annotated`: `Min(n)`, `Max(n)`, `MinLen(n)`, `MaxLen(n)`, `Pattern(regex)`, `MinItems(n)`, `MaxItems(n)`.
 
+Not supported: Pydantic models, tuples, sets, `bytes`, and dates/times (use `str`). The root type can't be `Optional`.
+
+File keys are the field names as written:
+
+```toml
+# orders/checkout.config.toml
+max_items = 100
+payment_timeout = "2m"
+```
+
 ## Read
 
 ```python
@@ -39,7 +49,7 @@ stop = checkout.on_change(lambda v: log.info("changed", extra={"max_items": v.ma
 ```python
 from encore.secrets import Secret
 
-stripe_key = Secret[str]("StripeKey")   # also declared, with the config's scope
+stripe_key = Secret[str]("StripeKey")   # the secret itself, declared at module scope
 
 @dataclass
 class Payments:
@@ -50,4 +60,4 @@ payments = Config[Payments]("payments")
 payments.value.api_key.value
 ```
 
-Secret fields can't be set in files, and can't be `Optional` or inside lists, dicts or unions. `SharedConfig` needs a `SharedSecret`, `GlobalConfig` a `GlobalSecret`.
+The field is always written `Secret[...]`; the config's scope picks the secret's. A `Config` reads the service's own secret, a `SharedConfig` a shared one, a `GlobalConfig` a global one, and the app must declare that secret (`Secret`, `SharedSecret` or `GlobalSecret`) or the parse fails. Secret fields can't be set in files, take no constraints, and can't be `Optional` or inside lists, dicts or unions.

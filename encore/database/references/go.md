@@ -65,6 +65,8 @@ if errors.As(err, &pgErr) { /* ... */ }
 
 Codes: `UniqueViolation`, `ForeignKeyViolation`, `NotNullViolation`, `CheckViolation`, `ExcludeViolation`, `TransactionFailed`, `DeadlockDetected`, `TooManyConnections`, `Other`.
 
+`*postgres.Error` has `SQLState()`, and an unreachable database fails with SQLSTATE `08001`, so an endpoint of Encore's API framework that returns these errors answers with a matching code: `already_exists` for a unique violation, `not_found` for no rows, `unavailable` when the database can't be reached. A canceled query returns the context's error.
+
 ## Transactions
 
 ```go
@@ -83,6 +85,17 @@ return tx.Commit()
 ```
 
 A transaction never ended rolls back once garbage-collected, but don't rely on it.
+
+Queries outside a transaction may each run on a different pooled connection, and session settings (`SET`, `set_config(..., false)`, `SET ROLE`) are reset before a connection is lent again (not ones a SQL function changes). Scope a setting to a transaction:
+
+```go
+tx, err := db.Begin(ctx)
+// ...
+if _, err := tx.Exec(ctx, "SELECT set_config('app.tenant_id', $1, true)", tenantID); err != nil {
+	return err
+}
+// row-level security policies reading app.tenant_id apply to tx's queries
+```
 
 ## Passing the database to other code
 

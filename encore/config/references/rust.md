@@ -28,7 +28,7 @@ Scopes: `Config<T>` (service's own, files beside `encore.service.json`), `Shared
 
 Constraints (`#[config(..)]` on a field): `min = N`, `max = N`, `min_len = N`, `max_len = N`, `pattern = "regex"`, `min_items = N`, `max_items = N`.
 
-Not supported in a config type: tuples, maps with non-string keys, untagged enums.
+A config type holds booleans, numbers, strings, `Option`, `Vec`, sets, maps with `String` keys, `Box`/`Arc`/`Rc`, `serde_json::Value`, `encore::config::Duration`, and the app's own types deriving `Deserialize`. Not supported: tuples, fixed-size arrays, untagged enums, other crates' types.
 
 ## Read
 
@@ -60,4 +60,4 @@ pub static PAYMENTS: Config<Payments> = Config::new("payments");
 let key = PAYMENTS.get().api_key.value()?;
 ```
 
-No config file sets a secret field. The secret has the config's scope: `Config` reads the service's own secret, `SharedConfig`/`GlobalConfig` an app-wide one.
+No config file sets a secret field, and it can't sit inside a list, map or enum. The secret has the config's scope: `Config` reads the service's own secret, `SharedConfig`/`GlobalConfig` an app-wide one. Encore Cloud stores app-wide secrets only, so a secret field that must work deployed belongs in a `SharedConfig` or `GlobalConfig` (declared with `SharedSecret`/`GlobalSecret`).

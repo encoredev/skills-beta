@@ -12,6 +12,8 @@ Keep `--features encore-dev/local` in your own command, or cargo rebuilds the SD
 
 Run tests through `encore test`: a plain `cargo test` has no runtime config, and the SDK exits the process on the first resource use when it can't initialize.
 
+`encore test --report-dir` / `--coverage` write no JUnit or coverage for Rust services yet: they still run, and `manifest.json` lists them without a report.
+
 ## Isolation
 
 Every test gets its own infrastructure: a freshly migrated, empty database, empty buckets and Redis databases, and its own topics. Tests can run in parallel without cleanup. The test is worked out from the thread: the test's own, or a thread of the Tokio runtime it runs in.
@@ -70,7 +72,7 @@ encore::fixture! {
 async fn lists_users() { /* ... */ }
 ```
 
-`pub static SEEDED for mod = ...;` makes it the default for every `#[encore::test]` in that module; opt out with `#[encore::test(fixture = none)]`. Databases, buckets and Redis are saved; topics always start empty.
+`pub static INVOICED: SEEDED = ...;` builds on another fixture. `pub static SEEDED for mod = ...;` makes it the default for every `#[encore::test]` in that module; opt out with `#[encore::test(fixture = none)]` or `encore::testing::without_fixture()?`. Databases, buckets and Redis are saved; topics always start empty. A fixture is reused across runs while the source is unchanged (one that touched Redis is rebuilt each run).
 
 ## Other services
 

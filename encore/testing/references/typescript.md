@@ -14,6 +14,8 @@ encore test -- vitest run users.test.ts       # a command of your own
 
 To run something else by default, set it in `encore.service.json`: `"test": { "type": "script", "script": "test:integration" }` or `{ "type": "custom", "cmd": [...] }`. With several TS services sharing one `package.json`, run the suite once with your own command (`encore test -- vitest run`) rather than once per service.
 
+A service whose `package.json` has no such script is skipped. `encore test --report-dir`/`--coverage` collect nothing from TS services yet: have the runner write its own JUnit and lcov.
+
 ## Vitest: one process per run
 
 Each test **process** gets its own copy of every database it touches, dropped when the process exits. Vitest's default `forks` pool starts a process per test file, so a suite of 40 files and 4 databases creates and drops about 160 databases a run. Every `DROP DATABASE` forces a checkpoint; the test Postgres backs up for minutes and tests time out. Run all files in one process with the `threads` pool, which still isolates each file's modules:

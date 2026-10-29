@@ -12,7 +12,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 axum = "0.8"
 ```
 
-`encore service new <name> --template rust-axum` (or `rust-hello-world`) writes this for you. The SDK needs a recent stable Rust: 1.89 fails to compile it, 1.99 works.
+`encore service new <name> --template rust-axum` writes this for you (`rust-hello-world` uses only the standard library, no SDK). The SDK needs a recent stable Rust: 1.89 fails to compile it, 1.99 works.
 
 ## Run strategy
 
@@ -23,7 +23,7 @@ axum = "0.8"
   "api": [{ "type": "http", "prefix": "/api", "name": "api", "expose": true }] }
 ```
 
-It runs `cargo build`, then `cargo run`, with `--features=encore-dev/local` (the local infrastructure providers). A custom command must pass that feature itself:
+It runs `cargo build`, then `cargo run`, with `--features=encore-dev/local` (the local infrastructure providers). The feature goes through the name the crate depends on the SDK by (`encore = { package = "encore-dev", ... }` gets `encore/local`); with no direct `encore-dev` dependency, none is passed. A custom command must pass that feature itself:
 
 ```json
 "run": { "type": "custom", "cmd": ["cargo", "run", "--bin", "api", "--features", "encore-dev/local"] }
@@ -119,9 +119,11 @@ match orders.get_order("123").await {
 use encore::env::{CloudProvider, EnvironmentType};
 
 let meta = encore::app_meta();
-meta.environment.r#type == EnvironmentType::Production; // Production | Development | Ephemeral | Test
-meta.environment.cloud == CloudProvider::Local;          // AWS | GCP | Azure | Encore | Local
-meta.gateway("api").map(|gw| gw.base_url.as_str());
+matches!(meta.environment.r#type, EnvironmentType::Production); // Production | Development | Ephemeral | Test
+matches!(meta.environment.cloud, CloudProvider::Local);          // AWS | GCP | Azure | Encore | Local
+meta.gateway("api").map(|gw| gw.base_url.as_str());              // None under `encore test`/`exec`
 ```
+
+The enums don't implement `PartialEq`, so compare with `matches!`, not `==`.
 
 There is no current-request API. Pub/Sub handlers get the details on their `Message`.
