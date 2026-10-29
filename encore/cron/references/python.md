@@ -20,6 +20,6 @@ async def send_welcome_emails() -> None:
     ...
 ```
 
-- Assign it to a module-level variable (`_` is fine). A bare `cron.Job(...)` expression isn't discovered.
+- Assign it to a module-level variable (`_` is fine). A bare `cron.Job(...)` expression, or one inside a function, `if` or `try`, is a parse error.
 - `cron.Job` raises `ValueError` at import if both or neither of `every`/`schedule` is set, or `path` doesn't start with `/`.
 - Django and Flask views work the same; they must accept `POST`.

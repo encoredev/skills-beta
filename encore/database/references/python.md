@@ -88,13 +88,13 @@ async def sql_read() -> postgres.DatabaseRef:
 SqlReader = Annotated[postgres.DatabaseRef, Depends(sql_read)]
 ```
 
-The access level is recorded for permissions only: today a `read()` handle can still write, and `read(primary=True)` has no effect yet.
+A `read()` handle runs on read-only connections: a write fails with `EncoreError` (SQLSTATE 25006), and its transactions are read-only. It reads from a replica when the environment has one; `read(primary=True)` reads from the primary. `write()` and `admin()` handles are read-write.
 
 Another service's database: `orders_db = postgres.Database.named("orders")` at module scope.
 
 ## ORMs and other clients
 
-`db.connection_string` points at an in-process proxy, valid only in a process running the SDK. Those queries aren't traced.
+`db.connection_string` points at an in-process proxy, valid only in a process running the SDK. Those queries aren't traced. A `read()` handle's `connection_string` opens read-only sessions.
 
 Django (what the `python-django` template does):
 

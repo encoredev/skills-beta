@@ -16,7 +16,7 @@ Families are properties of the database; methods are named after the Redis comma
 
 ```python
 await sessions.string.set("user:1", "Ada", ex=60)
-await sessions.string.set(key, value, ex=60, nx=True)
+await sessions.string.set(key, value, ex=60, nx=True)                       # b"OK" if written, else None
 await sessions.hash.hset("user:1:profile", ("name", "Ada"), ("lang", "en"))  # tuples for grouped values
 await sessions.list.rpush("queue", "job-1", "job-2")
 await sessions.sorted_set.zadd("leaderboard", (100, "ada"), (85, "grace"))   # (score, member)
@@ -49,7 +49,7 @@ Custom types: give the class `encode(self) -> bytes` and `@classmethod decode(cl
 async def count_visits(db: redis.DatabaseRef, page: str) -> int:
     return await db.string.incr(f"visits:{page}")
 
-await count_visits(sessions.write(), page)   # sessions.read() -> ReadOnlyDatabaseRef (writes rejected at runtime)
+await count_visits(sessions.write(), page)   # sessions.read() -> ReadOnlyDatabaseRef (read commands only)
 ```
 
 ## Not supported yet in Python

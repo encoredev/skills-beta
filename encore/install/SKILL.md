@@ -12,7 +12,7 @@ when_to_use: >-
 The beta installs as **`encore-beta`**, next to any v1 `encore`, so v1 apps keep working. The Encore v2 docs and these skills write commands as `encore ...`. **When you run them, use `encore-beta` unless `encore version` reports `2.x`.** Shell aliases don't apply in an agent's non-interactive shell, so don't rely on `alias encore=encore-beta`.
 
 ```bash
-command -v encore-beta && encore-beta version     # e.g. 2.0.0-beta.5+<sha>
+command -v encore-beta && encore-beta version     # e.g. 2.0.0-beta.7+<sha>
 command -v encore && encore version               # v1 prints 1.x
 ```
 
@@ -29,7 +29,12 @@ Update:
 
 ```bash
 brew upgrade encoredev/tap/encore-beta
+encore-beta version upgrade        # or upgrade in place, to the latest release on its channel
 ```
+
+**Restart the daemon after upgrading.** The old daemon keeps running from the removed version's directory, and `encore version` prints the **daemon's** version, so it still reports the old one. Until it restarts, `encore test` fails with `could not determine the Encore installation root, so the bundled Postgres could not be found` (setting `ENCORE_POSTGRES_ROOT` in your shell doesn't help: the daemon provisions databases), and under `encore run` or `encore check` every TS service fails with `could not find the Encore runtime library ('encore-runtime.node')`, so the gateway answers 502. There's no restart command. Compare `ls -l "$(command -v encore-beta)"` with the binary of the running `encore-beta daemon` process, and if they differ, stop that process (`pkill -f "encore-beta daemon"`, which stops the apps it runs) and start it again with `encore-beta daemon`.
+
+**v1 and v2 daemons both want port 9400** for the dev dashboard. With a v1 `encore` daemon running, the v2 daemon can retry, then exit without an error (`encore-beta daemon` still prints that it's running; check its log at `~/Library/Caches/encore/daemon.log` on macOS). Start it on another port: `ENCORE_DEVDASH_LISTEN_ADDR=127.0.0.1:9401 encore-beta daemon`.
 
 There's no Windows build documented for the beta; use WSL with Homebrew on Linux.
 
@@ -50,12 +55,12 @@ A missing toolchain shows up when the service starts: `failed to spawn uv for un
 
 ## SDK version must match the CLI
 
-Each SDK loads the native runtime that ships with the CLI, so **pin the SDK to the CLI's version**. With CLI `2.0.0-beta.5`:
+Each SDK loads the native runtime that ships with the CLI, so **pin the SDK to the CLI's version**. With CLI `2.0.0-beta.7`:
 
 | Language | Dependency |
 |---|---|
-| TypeScript | `@encore.dev/sdk@2.0.0-beta.5` |
-| Python | `encore-dev==2.0.0b5` |
+| TypeScript | `@encore.dev/sdk@2.0.0-beta.7` |
+| Python | `encore-dev==2.0.0b7` |
 | Go | module `sdk.encore.dev` (see the Go reference in `encore-beta-service`) |
 | Rust | crate `encore-dev` (see the Rust reference in `encore-beta-service`) |
 

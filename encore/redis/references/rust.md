@@ -54,7 +54,7 @@ SESSIONS.string().set("user:1", Json(&user)).await?;
 let Json(user): Json<Option<User>> = SESSIONS.string().get("user:1").await?; // missing = None
 ```
 
-Read possibly missing keys as `Option<T>`. Errors are `encore::Error` with `ErrCode::Unavailable`.
+Read possibly missing keys as `Option<T>` (a missing key read as plain `String` is an error). Errors are `encore::Error`: `ErrCode::Unavailable` for the server or connection, `ErrCode::Internal` when the reply isn't the type you asked for.
 
 ## Pipelines, transactions, watch, scripts
 
@@ -76,10 +76,10 @@ let left: i64 = LEDGER.watch("balance", async |conn, tx| { // optimistic, retrie
 
 use encore::storage::redis::Script;
 static RELEASE: Script = Script::new(r#"if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) end return 0"#);
-let ok: bool = LOCKS.script(&RELEASE).key(format!("lock:{job}")).arg(&token).invoke().await?;
+let ok: bool = SESSIONS.script(&RELEASE).key(format!("lock:{job}")).arg(&token).invoke().await?;
 ```
 
-Pass every key a script touches with `.key()`: only those get the database's key prefix. `Script::read_only(..)` runs on a read handle.
+`watch` gives up with `ErrCode::Aborted` after 64 conflicting attempts. Pass every key a script touches with `.key()`: only those get the database's key prefix. `Script::read_only(..)` runs on a read handle.
 
 ## Passing the database to other code
 

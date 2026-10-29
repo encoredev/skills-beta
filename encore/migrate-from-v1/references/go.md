@@ -1,28 +1,35 @@
 # Encore.go v1 to v2
 
-Replace the `encore.dev` module with `sdk.encore.dev` in `go.mod` (`require sdk.encore.dev v0.1.0`; Encore resolves it to the CLI's SDK). Each service becomes a `main` package (or names one with `"run": { "type": "go", "package": "./cmd/server" }`) that serves HTTP itself and calls `encore.Start()`. See the service skill.
+Replace the `encore.dev` module with `sdk.encore.dev` in `go.mod` (`require sdk.encore.dev v0.1.0`; Encore resolves it to the CLI's SDK, any version). Go 1.27 is required.
+
+Two ways to serve each service:
+
+- **Keep the `//encore:api` endpoints** on Encore's API framework (`"type": "encore-api"`, see `encore-beta-api`'s Go reference). Endpoints become methods, path parameters move into the request struct, and Encore generates `main` unless you write one.
+- **Port to `net/http` or a router**: the service becomes a `main` package (or names one with `"run": { "type": "go", "package": "./cmd/server" }`) that listens on `ENCORE_LISTEN_ADDR`, calls `encore.Start()` and declares its routes with an `api` entry. See the service skill.
 
 ## API mapping
 
-| v1 (`encore.dev/...`) | v2 (`sdk.encore.dev/...`) |
+| v1 (`encore.dev/...`) | v2 |
 |---|---|
-| `//encore:api`, `//encore:api raw` | Your router's handlers, declared to Encore with an `api` entry |
-| `//encore:authhandler`, `auth.UserID()` | Framework middleware, or `gateway` Middleware setting `reqctx` fields |
-| `//encore:middleware` | Framework middleware |
-| `beta/errs` | `beta/errs` (same builder; `errs.HTTPError(w, err)` writes one as a response) |
-| `storage/sqldb`: `sqldb.NewDatabase`, `sqldb.Named` | `storage/postgres`: `postgres.NewDatabase`, `postgres.Named` |
-| `sqldb.ErrNoRows` | `postgres.ErrNoRows` |
+| `//encore:api` functions, `raw` too | Methods with `//encore:api` (`api.encore.dev`), or your router's handlers with an `api` entry |
+| `//encore:api public`, `private`, `auth` | `expose`, or nothing for private; `auth` has no equivalent |
+| `//encore:service` struct, `initService` | The directive goes; `initService` still builds the value for a generated `main` |
+| `//encore:authhandler`, `auth.UserID()` | Middleware (`srv.Use`) or `gateway` Middleware setting a `reqctx` field |
+| `//encore:middleware` | `srv.Use` net/http middleware, or your framework's |
+| `beta/errs` | `api.encore.dev/errs` (same `Error`, codes and builder; `errs.HTTPError(w, err)` writes one from any handler). `sdk.encore.dev` has no `errs`. |
+| `storage/sqldb`: `sqldb.NewDatabase`, `sqldb.Named` | `sdk.encore.dev/storage/postgres`: `postgres.NewDatabase`, `postgres.Named` |
+| `sqldb.ErrNoRows` | `postgres.ErrNoRows` (it is `sql.ErrNoRows`) |
 | `db.Stdlib()`, `sqldb.Driver` | `db.ConnectionString()` with your own driver |
 | `storage/objects` | `storage/objects` (same API) |
 | `pubsub` | `pubsub` (handler receives `pubsub.Message[T]`) |
 | `storage/cache`: `cache.NewCluster`, keyspaces | `storage/redis`: `redis.NewDatabase` with Redis commands |
 | `cron`: `JobConfig{Endpoint: ...}` | `cron`: `JobConfig{Path: ...}` |
-| `var secrets struct { Key string }` | `secrets.New[string]("Key")`, `NewShared`, `NewGlobal` |
+| `var secrets struct { Key string }` (app-wide) | `secrets.NewShared[string]("Key")` or `NewGlobal`; `secrets.New` is per service |
 | `config.Load[T]()` with CUE, `config.Value[T]` fields | `config.New[T]("name")` with TOML/JSON files, plain field types |
 | `metrics.NewCounter`, `NewGauge`, groups | Same names, plus up-down counters, histograms, shared/global variants |
 | `rlog` | `log/slog` |
-| `encore.Meta()`, `encore.CurrentRequest()` | `env.Meta()`; no `CurrentRequest` |
-| Direct calls into another service's package | `services.BaseURL("users")` over HTTP, or a generated client |
+| `encore.Meta()`, `encore.CurrentRequest()` | `env.Meta()` (`sdk.encore.dev/env`); no `CurrentRequest` |
+| Direct calls into another service's package | `services.BaseURL("users")` over HTTP, or a client generated from an OpenAPI/GraphQL/gRPC spec |
 | `et` (`MockEndpoint`, `NewTestDatabase`, `Topic`) | None; tests get per-process infrastructure (see the testing skill) |
 
 ## Changes per API
@@ -56,7 +63,7 @@ var _ = pubsub.NewSubscription(Signups, "send-welcome", pubsub.SubscriptionConfi
 - `TopicConfig{DeliveryGuarantee: pubsub.AtLeastOnce}` becomes `pubsub.TopicConfig{}`; exactly-once is `ExactlyOnce: true`.
 - `OrderingAttribute` becomes `pubsub.NewOrderedTopic`, with the key passed to `Publish`.
 - `pubsub.MethodHandler` is gone; use a plain function.
-- **Call `encore.Start()` in `main`**, or nothing is delivered.
+- **`main` must call `encore.Start()`**, or nothing is delivered (a generated `main` does). A subscription must be in a package `main` imports.
 
 Caching: no clusters or keyspaces; build keys yourself and encode structs (e.g. JSON).
 
@@ -77,7 +84,7 @@ Cron:
 ```go
 // v1
 var _ = cron.NewJob("cleanup", cron.JobConfig{Every: cron.Hour, Endpoint: Cleanup})
-// v2: and serve POST /internal/cleanup on your router
+// v2: and serve POST /internal/cleanup, a private endpoint or a router route
 var _ = cron.NewJob("cleanup", cron.JobConfig{Every: cron.Hour, Path: "/internal/cleanup"})
 ```
 
@@ -87,12 +94,41 @@ Secrets:
 // v1
 var secrets struct{ StripeKey string }
 stripe.Key = secrets.StripeKey
-// v2
-var stripeKey = secrets.New[string]("StripeKey")
+// v2: v1 secrets were app-wide, and Encore Cloud stores app-wide secrets only
+var stripeKey = secrets.NewShared[string]("StripeKey")
 key, err := stripeKey.Value()
 ```
 
 Metrics now take a context: `ordersPlaced.Increment(ctx)`, `gauge.Set(ctx, v)`.
+
+## Keeping an endpoint (Encore's API framework)
+
+```go
+// v1
+//encore:api public method=GET path=/users/:id
+func Get(ctx context.Context, id int64) (*User, error) { ... }
+
+// v2: service "users" with "type": "encore-api"
+type Service struct{}
+
+type GetParams struct {
+	ID int64 `path:"id"`
+}
+
+//encore:api expose method=GET path=/users/{id}
+func (s *Service) Get(ctx context.Context, p *GetParams) (*User, error) {
+	var u User
+	err := db.QueryRow(ctx, "SELECT id, name FROM users WHERE id = $1", p.ID).Scan(&u.ID, &u.Name)
+	if errors.Is(err, postgres.ErrNoRows) {
+		return nil, &errs.Error{Code: errs.NotFound, Message: "user not found"} // api.encore.dev/errs
+	}
+	return &u, err
+}
+```
+
+- Every endpoint becomes an exported method; one value type per service is enough. Path parameters become `path:"name"` fields of the request struct, so a v1 endpoint with path parameters and a body merges both into one struct.
+- `public` becomes `expose`. Endpoints with `auth` need middleware (see `encore-beta-api`).
+- Returning `postgres.ErrNoRows` unwrapped also answers 404 `not_found`.
 
 ## Porting an endpoint (`net/http`)
 
@@ -138,4 +174,4 @@ req, _ := http.NewRequestWithContext(ctx, "GET", services.BaseURL("users")+"/use
 resp, err := client.Do(req) // client: &http.Client{Transport: services.Transport(nil)}
 ```
 
-For typed calls, give the target an OpenAPI spec (`{ "type": "openapi", "spec": "openapi.json" }`) and list it in the caller's `dependencies` to get `encore_gen/clients/users`.
+No clients are generated for `encore-api` services; `encore-beta-api` has a call helper that turns error responses back into `*errs.Error`. For typed calls to a router-based service, give the target an OpenAPI spec (`{ "type": "openapi", "spec": "openapi.json" }`) and list it in the caller's `dependencies` to get `encore_gen/clients/users`.

@@ -10,7 +10,7 @@ use encore::storage::postgres::Database;
 static DB: Database = Database::new("users").migrations("./migrations");
 ```
 
-- A module-level `static` with a literal name. The migrations path is relative to the file that declares the database (`src/main.rs` → `src/migrations/`).
+- A module-level `static` with a literal snake_case name (`encore_` is reserved). The migrations path is relative to the file that declares the database (`src/main.rs` → `src/migrations/`).
 - Another service's database: `static USERS: Database = Database::named("users");` (no options).
 
 ## Query
@@ -22,7 +22,7 @@ let row = DB.query_opt("SELECT id, name FROM users WHERE email = $1", &[&email])
 let row = DB.query_one("SELECT count(*) FROM users", &[]).await?;                      // Row
 let rows = DB.query("SELECT id, name FROM users ORDER BY name", &[]).await?;            // Vec<Row>
 let n: u64 = DB.execute("DELETE FROM users WHERE id = $1", &[&id]).await?;             // rows affected
-DB.batch_execute("SET statement_timeout = '5s'").await?;                                // no parameters
+DB.batch_execute("DELETE FROM carts; DELETE FROM sessions").await?;                     // no parameters
 
 let name: String = row.get("name");          // panics on a missing column or wrong type
 let id: i64 = row.try_get("id")?;            // encore::Error instead
@@ -35,7 +35,7 @@ let id: i64 = row.try_get("id")?;            // encore::Error instead
 - Types are tokio-postgres's. For `uuid`, `chrono`, `serde_json` and so on, enable the matching feature on the SDK's tokio-postgres fork:
 
 ```toml
-encore-tokio-postgres = { version = "=2.0.0-beta.5", features = ["with-uuid-1", "with-chrono-0_4"] }
+encore-tokio-postgres = { version = "=2.0.0-beta.7", features = ["with-uuid-1", "with-chrono-0_4"] }
 ```
 
 ## Transactions and connections
@@ -49,6 +49,8 @@ tx.commit().await?; // dropping without commit ROLLS BACK
 use encore::storage::postgres::IsolationLevel;
 let tx = DB.build_transaction().isolation_level(IsolationLevel::Serializable).start().await?;
 ```
+
+Session settings: each call on `DB` may get a different pooled connection, and a connection's settings and role (`SET`, `set_config`, `SET ROLE`) are reset before the pool lends it again. Scope a setting to a transaction (`SET LOCAL ...` or `set_config(name, value, true)`), or hold a `Connection` while you need it. A setting changed inside a SQL function (`SELECT set_tenant($1)`) isn't noticed and reaches the connection's next borrower.
 
 One connection for several statements, prepared statements or `COPY`:
 

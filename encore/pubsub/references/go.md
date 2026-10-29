@@ -53,7 +53,7 @@ func sendConfirmation(ctx context.Context, msg pubsub.Message[*orders.OrderPlace
 }
 ```
 
-**Nothing is delivered until `main` calls `encore.Start()`** (see the service skill). Returning `nil` acks; returning an error or panicking retries.
+**Nothing is delivered until `main` calls `encore.Start()`** (see the service skill). The `main` Encore generates for an API framework service calls it, but imports only the packages that declare endpoints: declare subscriptions in one of those or a package they import. Shortly after `Start`, the runtime warns of each subscription the service hosts that has no handler. Returning `nil` acks; returning an error or panicking retries.
 
 `pubsub.Message[T]` fields: `Data` (decoded), `RawData`, `ID` (stable across redeliveries), `Attributes`, `DeliveryAttempt` (from 1), `PublishTime`, `OrderingKey` (empty on plain topics). v1 handlers received the payload; v2 handlers receive the message.
 

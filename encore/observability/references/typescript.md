@@ -19,7 +19,7 @@ const reqLog = ordersLog.with({ customerId });     // adds fields to every recor
 const quiet = log.withLevel(LogLevel.Warn);
 ```
 
-Levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`. `console.log`, pino and winston output still appears, but as plain text with no fields or trace IDs.
+Levels: `trace`, `debug`, `info`, `warn`, `error`, `fatal`; `ENCORE_LOG` sets the lowest logged (`trace` by default, `off` for none). `console.log`, pino and winston output still appears, but as plain text with no fields or trace IDs.
 
 ## Metrics: `@encore.dev/sdk/metrics`
 
@@ -47,6 +47,8 @@ Groups: `CounterGroup`, `UpDownCounterGroup`, `GaugeGroup`, `HistogramGroup`. Sh
 OpenTelemetry instruments: `meterProvider().getMeter("payments")` from `@encore.dev/sdk/metrics`.
 
 ## Tracing: register Encore's OpenTelemetry providers
+
+Encore's API framework (`@encore.dev/api`) records a server span per request and continues the caller's trace by itself. Register the providers for your own spans and for instrumentations (other frameworks, HTTP clients, ORMs).
 
 ```typescript
 // otel.ts: import it FIRST in the entry point (import "./otel";)

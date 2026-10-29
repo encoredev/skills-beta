@@ -15,11 +15,12 @@ Declare a database in code. Encore provisions it: a local Postgres cluster for `
 
 ## Rules for every language
 
-- Declare at module/package scope, name as a string literal, unique in the app. **Never rename a deployed database**: Encore would create a new, empty one.
+- Declare at module/package scope, name a snake_case string literal (the `encore_` prefix is reserved), unique in the app. **Never rename a deployed database**: Encore would create a new, empty one.
 - Keep the declaration in its own module (`db.ts`, `db.py`, ...) and import it, so tests and scripts can use it without starting the server.
 - The database belongs to the declaring service. Another service binds it by name (`Database.named("users")` or equivalent), but prefer one owner exposing the data over its API.
 - **Always parameterize.** Never build SQL from request input.
 - To hand the database to a helper, pass a handle (`read()`, `write()`, `admin()`), not the declaration.
+- Session settings (`SET`, `set_config(name, value, false)`, `SET ROLE`) are reset before a pooled connection is lent again, except ones changed inside a SQL function. Scope a per-request setting to a transaction with `SET LOCAL` or `set_config(name, value, true)`.
 
 ## Migrations
 
@@ -44,6 +45,7 @@ encore db list
 encore db shell --database users                  # psql
 encore db query --database users "SELECT count(*) FROM users"
 encore db conn-uri --database users               # connection string for other tools
+encore db conn-uri --database users --shadow      # an empty shadow database for Prisma Migrate (`shadowDatabaseUrl`)
 encore db proxy                                   # local proxy to every database
 encore db version --database users                # version and dirty flag
 encore db migrate --database users --up           # or --down, --to N, --set N

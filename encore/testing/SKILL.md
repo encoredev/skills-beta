@@ -11,7 +11,7 @@ CLI commands are written `encore`; run them as `encore-beta` unless `encore vers
 
 **Run tests through `encore test`.** It attaches the Encore runtime to the test process and provisions infrastructure on first use, isolated from `encore run` data and from other test runs, and removes it when the process exits. Running the test tool directly fails or hits the wrong infrastructure (Python fails at `import encore`).
 
-**Read `references/<lang>.md`** for the service's language (`typescript`, `python`, `go`, `rust`). TypeScript has a known beta.5 issue with `encore test` that its reference explains.
+**Read `references/<lang>.md`** for the service's language (`typescript`, `python`, `go`, `rust`).
 
 ## Running
 
@@ -20,7 +20,10 @@ encore test                                # each service's `test` strategy (def
 encore test --services users               # service-set expression: 'users | billing', 'lang(ts)'
 encore test --concurrency 1
 encore test -- vitest run users.test.ts    # your own command
+encore test --report-dir out --coverage    # JUnit per service and a merged coverage.lcov (not with your own command)
 ```
+
+Your own command (`encore test -- <cmd>`) runs once, verbatim, from the current directory; with `--services` it runs in each selected service's directory with its environment.
 
 Defaults: TypeScript runs the `test` script in `package.json`; Python runs `pytest` through the lockfile's package manager; Go and Rust use their language test strategy. Override with `"test": { "type": "custom", "cmd": [...] }` (or `"script"` for TypeScript) in `encore.service.json`.
 

@@ -16,7 +16,11 @@ Commands are written `encore`; run them as `encore-beta` unless `encore version`
 - Logged in (`encore auth whoami`, see `encore-beta-login`).
 - `encore check` passes locally.
 - Every exposed route is meant to be public, with auth where needed (`"expose": true` on `"prefix": "/"` publishes everything, cron routes included).
-- Secrets have cloud values. During the beta, **Encore Cloud stores app-wide secrets only**: secrets the deployed app needs must be `sharedSecret`/`globalSecret` (or the language equivalent). Check with `encore secret list --missing`.
+- Secrets have cloud values. During the beta, **Encore Cloud stores app-wide secrets only**: secrets the deployed app needs must be `sharedSecret`/`globalSecret` (or the language equivalent). Check with `encore secret list --missing`. Tests run during a cloud build read the `--type local` value, so give secrets the tests need one too.
+
+**Known issue: Encore Cloud can't build TypeScript services.** The build doesn't install packages. An API framework service fails within seconds with `no node_modules directory at or above /workspace/<service>: install the service's packages`; other TS services bundle with `warning: unresolved dependency "@encore.dev/sdk"`. There's no workaround in the app: tell the user before linking, and self-host with `encore build docker`, which installs in the container, if they need it deployed now.
+
+The cloud build also runs `encore test`, and fails with `no selected services have a "test" command` when no service has one (TS: a `test` script in `package.json`, or `"test"` in `encore.service.json`).
 
 ## 1. Link the app
 

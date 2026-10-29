@@ -62,8 +62,9 @@ encore explain ENC0005            # explain an error code
 | `404` from the gateway | The route's `api` entry lacks `"expose": true`, or the path is outside its `prefix`. Routes keep their prefix: `"prefix": "/notes"` serves `/notes/...`. |
 | `502` from the gateway | The service didn't start or isn't listening where Encore expects. Check stderr / `encore logs`. Bind to `ENCORE_LISTEN_ADDR`, not a fixed port. |
 | `failed to spawn uv/bun/go/cargo` | Toolchain not installed (see `encore-beta-install`). |
-| TS: `could not find the Encore runtime library ('encore-runtime.node')` under `encore test` or `encore exec` | Known beta.5 issue: `export ENCORE_RUNTIME_LIB="$(brew --prefix encore-beta)/libexec/runtimes/js/encore-runtime.node"` first. |
 | SDK/runtime version error at startup | Pin the SDK to `encore version` (see `encore-beta-install`). |
+| Every TS service fails with `could not find ... encore-runtime.node` under `encore run`/`check`, or tests can't find the bundled Postgres, right after an upgrade | The old daemon is still running: restart it (see `encore-beta-install`). |
+| Commands fail with `h2 send failed: connection error` | No daemon is running, e.g. it exited because a v1 daemon holds port 9400: start it with `ENCORE_DEVDASH_LISTEN_ADDR=127.0.0.1:9401 encore-beta daemon` (see `encore-beta-install`). |
 | Parse error naming a resource | A declaration isn't at module scope, has a non-literal name/option, or a resource is aliased/passed around (see `encore-beta-code-review`). |
 | Pub/Sub handler never runs | Missing start call for the language, or its module isn't imported (see `encore-beta-pubsub`). |
 | Secret empty or `KeyError` | Set it with `encore secret set` (see `encore-beta-secrets`). |

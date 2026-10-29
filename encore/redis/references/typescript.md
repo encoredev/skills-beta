@@ -12,7 +12,7 @@ export const ledger = new Database("ledger", { persistent: true });             
 export const pageCache = new Database("page-cache", { evictionPolicy: "allkeys-lfu" }); // default "allkeys-lru"
 ```
 
-Name: kebab-case literal. Another service's database: `Database.named("sessions")`.
+Name: kebab-case literal. A persistent database takes no `evictionPolicy` (parse error). Another service's database: `Database.named("sessions")`.
 
 ## Commands
 

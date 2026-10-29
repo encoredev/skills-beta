@@ -6,9 +6,11 @@
 encore test                          # every service
 encore test --services api           # one service
 GOFLAGS="-v -run=TestInsert" encore test --services api   # pass go test flags
+encore test --services api -- go test -run TestInsert ./...   # own command, in the service's directory
+encore test --report-dir out --coverage   # JUnit per service + one merged coverage.lcov
 ```
 
-Set it in `encore.service.json`: `"test": { "type": "go", "package": "./internal/..." }` or `{ "type": "custom", "cmd": [...] }`. An explicit command (`encore test -- go test ./...`) runs without Encore's `go.work`, so from the app root it fails to find the module; prefer the strategy.
+Set it in `encore.service.json`: `"test": { "type": "go", "package": "./internal/..." }` (default `./...`) or `{ "type": "custom", "cmd": [...] }`. An explicit command with `--services` runs in each selected service's directory with Encore's `go.work`; without `--services` it runs verbatim from the current directory without it, so `sdk.encore.dev` can't be resolved. `--report-dir` runs `go test -json` through `encore go-test-report` to write `junit.xml`, and with `--coverage` adds `-coverprofile` in atomic mode (so `GOFLAGS=-race` still works); it can't be combined with an explicit command.
 
 ## Database tests
 
@@ -44,6 +46,10 @@ func TestMissingUser(t *testing.T) {
 	}
 }
 ```
+
+## Encore's API framework
+
+Call endpoint methods directly: `svc, err := initService()` (or build the value), then `svc.Get(ctx, &GetParams{ID: 1})`. Request decoding, middleware and the error-to-status mapping don't run, so set Request Context fields yourself (`ctx = auth.CurrentUser.With(ctx, user)`) and check HTTP behavior with `encore check`.
 
 ## Other services
 

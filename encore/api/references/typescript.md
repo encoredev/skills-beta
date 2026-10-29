@@ -3,10 +3,10 @@
 Package: `@encore.dev/api`, with `@encore.dev/sdk` and `@opentelemetry/api` as peers. Pin both Encore packages to the CLI's version:
 
 ```bash
-bun add @encore.dev/api@2.0.0-beta.5 @encore.dev/sdk@2.0.0-beta.5 @opentelemetry/api
+bun add @encore.dev/api@2.0.0-beta.7 @encore.dev/sdk@2.0.0-beta.7 @opentelemetry/api
 ```
 
-Encore generates the service's entry (`node_modules/.encore/<service>/entry.ts`) and runs it with Bun. The entry imports the service's `index.ts` and **only the modules that declare endpoints**. A subscription or cron job declared in a module nothing imports never starts: declare it in an endpoint module or a module one imports.
+Encore generates the service's entry (`node_modules/.encore/<service>/entry.ts`) and runs it with Bun under `encore run`. The deployed image runs the bundle on Node unless `"build": { "runtime": "bun" }` (see `encore-beta-service`). The entry imports the service's `index.ts` and **only the modules that declare endpoints**. A subscription or cron job declared in a module nothing imports never starts: declare it in an endpoint module or a module one imports.
 
 ## Endpoints
 
@@ -32,14 +32,9 @@ export const get = api(
 export const prune = api({ method: "POST", path: "/users/prune" }, async (): Promise<void> => { /* ... */ });
 ```
 
-- Options must be literals: `method` (one, a list or `"*"`), `path` (`:id` or `{id}`, last segment `{*rest}`), `expose`, `tags`, `sensitive` (kept out of traces), `bodyLimit` (bytes, 2 MiB by default, `null` for none).
-- **`bodyLimit` is missing from the `APIOptions` type in beta.5** though Encore reads it. Add once, e.g. `lib/api-options.d.ts`:
-  ```typescript
-  import "@encore.dev/api";
-  declare module "@encore.dev/api" { interface APIOptions { bodyLimit?: number | null } }
-  ```
-- Request fields that aren't path, `Query`, `Header` or `Cookie` come from the JSON body; for GET, HEAD and DELETE they're query parameters. A request that doesn't decode or validate answers 400 `invalid_argument` naming the field. Validation types: `Min`, `Max`, `MinLen`, `MaxLen`, `IsEmail`, `IsURL`, `StartsWith`, `EndsWith`, `MatchesRegexp`.
-- Response fields typed `Header<>`, `Cookie<>` or `HttpStatus` become headers, cookies and the status. A thrown `APIError` answers with its code's status; any other error answers 500 `internal` and is logged.
+- Options must be literals: `method` (one, a list or `"*"`; by default POST with a request, GET and POST without, every method for a raw endpoint), `path` (`:id` or `{id}`, last segment `{*rest}` or `*rest`; by default `/<service>.<endpoint>`), `expose` (default false), `tags`, `sensitive` (kept out of traces), `bodyLimit` (bytes, 2 MiB by default, `null` for none). A method the route doesn't take answers 404; HEAD falls back to GET.
+- Request fields that aren't path, `Query`, `Header` or `Cookie` come from the JSON body; for GET, HEAD and DELETE they're query parameters. A request that doesn't decode or validate answers 400 `invalid_argument` naming the field; body members the request type doesn't declare are dropped, not refused. `Date` fields arrive as `Date`s. Validation types: `Min`, `Max`, `MinLen`, `MaxLen`, `IsEmail`, `IsURL`, `StartsWith`, `EndsWith`, `MatchesRegexp`.
+- Response fields typed `Header<>`, `Cookie<>` or `HttpStatus` become headers, cookies and the status. A handler returning nothing answers 200 with no body. A thrown `APIError` answers with its code's status and `{ code, message, details }` (`.withDetails({...})`); any other error answers 500 `internal`, logged and not sent.
 
 ## Raw endpoints
 
@@ -57,7 +52,7 @@ export const upload = api.raw(
 );
 ```
 
-- **Raw endpoints have no body limit**, whatever `bodyLimit` says. Count bytes while reading and reject past your limit.
+- **Raw endpoints' bodies are limited as they arrive:** past `bodyLimit` (2 MiB by default), Encore answers 400 `invalid_argument` itself, and the handler's read of the body then fails. A handler that answers its own errors should check `resp.headersSent` first.
 - The handler must return `void`/`Promise<void>`: write `resp.end(); return;`, not `return resp.end()`, or it doesn't type-check.
 - `currentRequest()` from `@encore.dev/api` describes the API call (`pathParams`, `headers`, `api.tags`, `middlewareData`). The same name in `@encore.dev/sdk` describes a Pub/Sub message instead.
 
@@ -132,4 +127,4 @@ Private endpoints are reachable this way. Responses arrive as JSON, so `Date` fi
 
 ## Testing
 
-An endpoint value is callable as its handler: `await get({ id: 1 })`. Under `encore test` no service runs, so for code that calls another service, have the call helper invoke the target endpoint in-process in tests (the test process can reach every service's database). Register those endpoints lazily, on first call, or a test file's `vi.mock()` won't apply to modules a setup file already imported. Middleware doesn't run on direct calls: set the caller in tests some other way (e.g. an `AsyncLocalStorage` that `getAuthData()` checks first). See `encore-beta-testing` for running the suite.
+An endpoint value is callable as its handler: `await get({ id: 1 })`. Under `encore test` no service runs, so for code that calls another service, have the call helper invoke the target endpoint in-process in tests (the test process can reach every service's database). Register those endpoints lazily, on first call, or a test file's `vi.mock()` won't apply to modules a setup file already imported. Middleware doesn't run on direct calls: set the caller in tests some other way (e.g. an `AsyncLocalStorage` that `getAuthData()` checks first). **Neither does request validation:** `IsEmail`, `MinLen` and the other validation types are checked when Encore decodes an HTTP request, so a direct call with an invalid request reaches the handler. Test validation over HTTP (`encore check`), not with direct calls. See `encore-beta-testing` for running the suite.

@@ -18,7 +18,7 @@ Declare a secret by name in code; set its value outside the code, per machine or
 | Scope | TS / Python | Meaning |
 |---|---|---|
 | Service | `secret("X")` / `Secret[str]("X")` | The declaring service's own. Two services can each have `X` with different values. Must be declared inside a service. |
-| Shared | `sharedSecret("X")` / `SharedSecret[str]("X")` | One app-wide value; Encore tracks which services read it. Can be declared outside a service. |
+| Shared | `sharedSecret("X")` / `SharedSecret[str]("X")` | One app-wide value; Encore tracks which services read it. Can be declared outside a service. Python: another service binds it with `SharedSecret[str].named("X")`. |
 | Global | `globalSecret("X")` / `GlobalSecret[str]("X")` | One app-wide value, available to every service, untracked. |
 
 Start with a service secret. **Exception for deployed apps: during the beta, Encore Cloud stores app-wide secrets only.** A service's own secret can only get a value locally, so anything that must work when deployed needs a shared or global secret.

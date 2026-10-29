@@ -61,7 +61,7 @@ encore/database/
 | `encore-beta-login` | Log in to Encore Cloud, including with an auth key and in CI |
 | `encore-beta-create-app` | `encore app new`/`init`, services from templates without prompts, `llm-rules` |
 | `encore-beta-service` | `encore.service.json`, routing and exposure, listening, startup and shutdown, service calls, gateway CORS, deploy build options |
-| `encore-beta-api` | Encore's TypeScript API framework (`@encore.dev/api`): `api()` endpoints, validation, middleware and auth, as in v1 |
+| `encore-beta-api` | Encore's API framework for TypeScript (`@encore.dev/api`) and Go (`api.encore.dev`): endpoints, validation, middleware and auth, as in v1 |
 | `encore-beta-run` | `encore check`, running in the background, status, logs, traces, fixing 404s and 502s |
 | `encore-beta-mcp` | Connect AI tools to the daemon's local MCP server |
 | `encore-beta-deploy` | Link to Encore Cloud, deploy, stream logs, build Docker images |
@@ -84,7 +84,7 @@ encore/database/
 
 ## Sources and verification
 
-The skills are written against the v2 beta CLI and SDKs (`2.0.0-beta.5`) and the beta docs for TypeScript and Python. Where the beta docs and the CLI disagree, the skills follow the CLI and SDK source. The Go and Rust references are written from the SDK source, since those languages have no beta docs yet.
+The skills are written against the v2 beta CLI and SDKs (`2.0.0-beta.7`) and the beta docs for TypeScript and Python. Where the beta docs and the CLI disagree, the skills follow the CLI and SDK source. The Go and Rust references are written from the SDK source, since those languages have no beta docs yet.
 
 ## License
 

@@ -1,12 +1,13 @@
 # Testing in Python
 
-`encore test` runs `pytest` in each Python service's directory, through the package manager detected from its lockfile (`uv run pytest`, `poetry run pytest`, ..., or `python3 -m pytest`). **Plain `pytest` fails**: importing `encore` needs the configuration `encore test` supplies.
+`encore test` runs pytest in each Python service's directory, through the package manager detected from its lockfile (`uv run`, `poetry run`, ..., or plain `python3`). A service with no tests passes. **Plain `pytest` fails**: importing `encore` needs the configuration `encore test` supplies.
 
 ```bash
 encore test
 encore test --services orders
 encore test uv run pytest -k create_order -x                       # from the service directory
 encore test --services orders uv run pytest tests/test_orders.py   # runs in that service's directory
+encore test --report-dir out --coverage                            # JUnit + lcov; coverage needs `coverage` in dev deps
 ```
 
 ## Setup
@@ -43,9 +44,13 @@ Isolation is **per test process, not per test**. Every test in one pytest run sh
 - Clean up in fixtures, so cleanup runs when a test fails.
 - Don't assert on table-wide totals; filter on the rows the test created.
 
+## Other services
+
+No other service runs under `encore test`. A module-level `services.client("billing")` still builds, but its requests get `501 Not Implemented`. Mock the client (or the function wrapping the call) in tests.
+
 ## Pub/Sub
 
-Nothing calls `encore.run()` or `encore.start()` in tests, so subscriptions don't consume. Call the handler with a `pubsub.Message` you build (a frozen dataclass):
+Subscriptions consume only after `encore.start()`, which nothing calls in tests (unless a test client runs a lifespan that does). Call the handler with a `pubsub.Message` you build (a frozen dataclass):
 
 ```python
 from datetime import datetime, timezone

@@ -37,7 +37,7 @@ const { rowsAffected } = await db.exec`DELETE FROM users WHERE id = ${id}`;     
 ```
 
 - The type argument describes rows; it does not convert or validate them.
-- `BYTEA` arrives as `Uint8Array`. Wrap with `Buffer.from(value)` before calling `Buffer` methods.
+- `BYTEA` arrives as an `ArrayBuffer`. Wrap with `Buffer.from(value)` before calling `Buffer` methods.
 - `exec` discards `RETURNING` rows. Use `queryRow` to read them.
 
 Dynamic SQL uses the `raw` variants (`rawQuery`, `rawQueryAll`, `rawQueryRow`, `rawExec`), with parameters passed separately. Only interpolate trusted strings such as column names you choose:
@@ -69,6 +69,15 @@ await conn.exec`SET statement_timeout = '5s'`;
 ```
 
 A streaming `query` holds its connection until the loop ends; leaving the loop early closes it.
+
+Session settings and roles (`SET`, `set_config(..., false)`, `SET ROLE`) sent on an acquired connection or in a transaction are reset before the pool lends the connection again; one changed inside a SQL function is not, and leaks to the next borrower. Separate statements on `db` may each run on a different connection, so scope a per-request setting (a tenant id for row-level security, a role) to a transaction:
+
+```typescript
+await using tx = await db.begin();
+await tx.exec`SELECT set_config('app.tenant_id', ${tenantId}, true)`; // or SET LOCAL ROLE ...
+// ... queries that RLS policies filter by app.tenant_id
+await tx.commit();
+```
 
 ## Passing the database to other code
 

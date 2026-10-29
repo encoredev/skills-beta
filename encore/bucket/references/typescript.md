@@ -31,7 +31,7 @@ try {
 
 await avatars.exists(key);       // boolean
 await avatars.attrs(key);        // name, size, etag, contentType, version
-for await (const e of avatars.list({ prefix: "users/" })) console.log(e.name, e.size);
+for await (const e of avatars.list({ prefix: "users/", limit: 100 })) console.log(e.name, e.size); // list({}) for all
 await avatars.remove(key);
 ```
 
